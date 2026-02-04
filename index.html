@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shop Manager V9.5 - Iconic CRM</title>
+    <title>Shop Manager V11.0 - Full Stack (Chart & Inventory)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         :root { --deep-teal: #034C5F; --light-teal: #97BEC6; --coral: #EE6457; --soft-pink: #F9C4BA; --bg-creamy: #FDF5F4; }
@@ -17,11 +19,14 @@
         .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--light-teal); font-size: 14px; }
         .card { background: white; border-radius: 24px; border: 1px solid var(--soft-pink); box-shadow: 0 4px 15px rgba(238, 100, 87, 0.05); }
         .btn-main { background-color: var(--deep-teal); color: white; border-radius: 12px; font-weight: 700; transition: 0.2s; }
-        .btn-accent { background-color: var(--coral); color: white; border-radius: 12px; font-weight: 700; transition: 0.2s; }
         .crm-input { background: transparent; border: none; width: 100%; font-size: 13px; padding: 6px; border-radius: 6px; }
         .crm-input:focus { background: white; box-shadow: 0 0 0 1px var(--light-teal); outline: none; }
         .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        /* Toast style cho thông báo copy */
+        
+        /* CSS cho cảnh báo tồn kho */
+        .stock-low { color: #EE6457; font-weight: bold; }
+        .stock-ok { color: #034C5F; }
+        
         #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
@@ -29,19 +34,32 @@
     </style>
 </head>
 <body class="pb-24">
-    <div id="toast">Đã sao chép thông tin!</div>
+    <div id="toast">Thông báo hệ thống</div>
+    <datalist id="productDataList"></datalist>
 
     <header class="bg-white/90 backdrop-blur-md border-b border-soft-pink sticky top-0 z-40">
         <div class="container mx-auto px-4 h-16 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-[#034C5F] rounded-xl flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-                <h1 class="font-extrabold text-[#034C5F] tracking-tight text-xl uppercase">Sunset<span class="text-[#EE6457] font-light">Shop</span></h1>
+                <div class="w-10 h-10 bg-[#034C5F] rounded-xl flex items-center justify-center text-white shadow-md"><i class="fa-solid fa-chart-simple"></i></div>
+                <h1 class="font-extrabold text-[#034C5F] tracking-tight text-xl uppercase hidden md:block">Sunset<span class="text-[#EE6457] font-light">Shop V11</span></h1>
             </div>
+            
             <nav class="flex bg-[#FDF5F4] p-1 rounded-2xl border border-[#F9C4BA]">
-                <button onclick="switchTab('orders')" id="tab-orders" class="px-4 py-2 rounded-xl text-sm font-bold transition-all bg-white text-[#034C5F] shadow-sm"><i class="fa-solid fa-cart-shopping mr-1"></i> Đơn</button>
-                <button onclick="switchTab('analytics')" id="tab-analytics" class="px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-chart-line mr-1"></i> Báo cáo</button>
-                <button onclick="switchTab('customers')" id="tab-customers" class="px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-users mr-1"></i> Khách</button>
+                <button onclick="switchTab('orders')" id="tab-orders" class="px-3 md:px-4 py-2 rounded-xl text-sm font-bold transition-all bg-white text-[#034C5F] shadow-sm"><i class="fa-solid fa-cart-shopping md:mr-1"></i><span class="hidden md:inline"> Đơn</span></button>
+                <button onclick="switchTab('analytics')" id="tab-analytics" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-chart-pie md:mr-1"></i><span class="hidden md:inline"> Báo cáo</span></button>
+                <button onclick="switchTab('inventory')" id="tab-inventory" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-warehouse md:mr-1"></i><span class="hidden md:inline"> Kho</span></button>
+                <button onclick="switchTab('customers')" id="tab-customers" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-users md:mr-1"></i><span class="hidden md:inline"> Khách</span></button>
             </nav>
+
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('fileInput').click()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-[#EE6457] hover:text-white transition-all flex items-center justify-center" title="Khôi phục">
+                    <i class="fa-solid fa-upload"></i>
+                </button>
+                <input type="file" id="fileInput" class="hidden" accept=".json" onchange="restoreData(this)">
+                <button onclick="backupData()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-[#034C5F] hover:text-white transition-all flex items-center justify-center" title="Sao lưu">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -52,7 +70,7 @@
                     <input type="hidden" id="editOrderId" value="">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-4">
-                            <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-address-card"></i> Thông tin khách hàng</label>
+                            <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-address-card"></i> Khách hàng</label>
                             <div class="flex gap-2">
                                 <div class="input-group flex-1">
                                     <i class="fa-solid fa-phone input-icon"></i>
@@ -71,7 +89,7 @@
                             <datalist id="nameDataList"></datalist>
                         </div>
                         <div class="space-y-4">
-                            <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-map-location-dot"></i> Địa chỉ giao hàng</label>
+                            <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-map-location-dot"></i> Địa chỉ</label>
                             <div class="relative">
                                 <i class="fa-solid fa-house input-icon" style="top: 20px;"></i>
                                 <textarea id="custAddr" class="form-input h-[105px] resize-none py-3" placeholder="Địa chỉ chi tiết..."></textarea>
@@ -80,9 +98,9 @@
                     </div>
 
                     <div class="space-y-3">
-                        <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-bag-shopping"></i> Danh sách sản phẩm</label>
+                        <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-bag-shopping"></i> Sản phẩm</label>
                         <div id="product-list" class="space-y-3"></div>
-                        <button type="button" onclick="addProductRow()" class="w-full py-3 bg-[#FDF5F4] border-2 border-dashed border-[#F9C4BA] rounded-xl text-[#034C5F] text-xs font-bold hover:bg-[#F9C4BA]/30 transition-all"><i class="fa-solid fa-plus-circle mr-1"></i> THÊM MẶT HÀNG MỚI</button>
+                        <button type="button" onclick="addProductRow()" class="w-full py-3 bg-[#FDF5F4] border-2 border-dashed border-[#F9C4BA] rounded-xl text-[#034C5F] text-xs font-bold hover:bg-[#F9C4BA]/30 transition-all"><i class="fa-solid fa-plus-circle mr-1"></i> THÊM MẶT HÀNG</button>
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-[#F9C4BA]">
@@ -97,8 +115,8 @@
 
                     <div class="flex flex-col md:flex-row justify-between items-center bg-[#034C5F] text-white p-6 rounded-[28px] gap-6 shadow-xl">
                         <div class="flex gap-4">
-                            <div class="text-center"><label class="text-[10px] mb-1 block">Ship <i class="fa-solid fa-truck-fast ml-1"></i></label><input type="number" id="shipFee" oninput="calculateTotal()" class="form-input !pl-3 w-24 text-[#034C5F]" value="0"></div>
-                            <div class="text-center"><label class="text-[10px] mb-1 block">Giảm <i class="fa-solid fa-tag ml-1"></i></label><div class="flex"><input type="number" id="discountVal" oninput="calculateTotal()" class="form-input !pl-3 rounded-r-none w-16 text-[#034C5F]" value="0"><select id="discountType" onchange="calculateTotal()" class="bg-white text-[#034C5F] rounded-r-xl text-[10px] px-1 font-bold"><option value="percent">%</option><option value="amount">₫</option></select></div></div>
+                            <div class="text-center"><label class="text-[10px] mb-1 block">Ship</label><input type="number" id="shipFee" oninput="calculateTotal()" class="form-input !pl-3 w-24 text-[#034C5F]" value="0"></div>
+                            <div class="text-center"><label class="text-[10px] mb-1 block">Giảm</label><div class="flex"><input type="number" id="discountVal" oninput="calculateTotal()" class="form-input !pl-3 rounded-r-none w-16 text-[#034C5F]" value="0"><select id="discountType" onchange="calculateTotal()" class="bg-white text-[#034C5F] rounded-r-xl text-[10px] px-1 font-bold"><option value="percent">%</option><option value="amount">₫</option></select></div></div>
                         </div>
                         <div class="text-center md:text-right">
                             <span class="text-xs text-[#97BEC6] uppercase font-bold tracking-widest">TỔNG THỰC THU</span>
@@ -106,7 +124,7 @@
                         </div>
                         <div class="flex gap-2 w-full md:w-auto">
                             <button type="button" onclick="resetForm()" class="px-5 py-4 bg-[#023846] rounded-xl text-xs uppercase font-extrabold hover:bg-black transition-all"><i class="fa-solid fa-rotate-left"></i></button>
-                            <button onclick="saveOrder()" id="btnSave" class="flex-1 px-10 py-4 bg-[#EE6457] rounded-xl font-bold shadow-lg uppercase hover:scale-105 transition-all"><i class="fa-solid fa-check-double mr-2"></i>Lưu đơn hàng</button>
+                            <button onclick="saveOrder()" id="btnSave" class="flex-1 px-10 py-4 bg-[#EE6457] rounded-xl font-bold shadow-lg uppercase hover:scale-105 transition-all"><i class="fa-solid fa-check-double mr-2"></i>Lưu đơn</button>
                         </div>
                     </div>
                 </form>
@@ -114,10 +132,18 @@
 
             <section class="card overflow-hidden">
                 <div class="p-4 bg-white border-b border-soft-pink space-y-4">
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
                         <h3 class="font-bold text-[#034C5F] text-sm uppercase tracking-tighter"><i class="fa-solid fa-rectangle-list mr-2"></i>Danh sách đơn hàng</h3>
-                        <button onclick="exportOrdersToExcel()" class="bg-[#FDF5F4] text-[#EE6457] px-4 py-2 rounded-xl text-xs font-bold border border-[#F9C4BA] hover:bg-[#EE6457] hover:text-white transition-all"><i class="fa-solid fa-file-csv mr-1"></i> XUẤT TẤT CẢ DỮ LIỆU</button>
+                        
+                        <div class="flex-1 w-full md:w-auto relative group">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#EE6457]"></i>
+                            <input type="text" id="searchOrderInput" onkeyup="renderTable()" placeholder="Tìm tên hoặc SĐT khách..." 
+                                class="w-full pl-10 pr-4 py-2 rounded-xl border border-[#F9C4BA] focus:border-[#EE6457] focus:ring-2 focus:ring-[#EE6457]/20 outline-none text-sm transition-all shadow-inner bg-[#FDF5F4]">
+                        </div>
+
+                        <button onclick="openExportModal()" class="bg-[#FDF5F4] text-[#EE6457] px-4 py-2 rounded-xl text-xs font-bold border border-[#F9C4BA] hover:bg-[#EE6457] hover:text-white transition-all whitespace-nowrap"><i class="fa-solid fa-file-csv mr-1"></i> Xuất CSV</button>
                     </div>
+
                     <div class="flex flex-wrap gap-2 items-center bg-[#FDF5F4] p-3 rounded-xl border border-[#F9C4BA]">
                         <input type="date" id="listFilterStart" onchange="renderTable()" class="text-xs p-2 rounded-lg border border-[#F9C4BA]">
                         <span class="text-[#97BEC6]"><i class="fa-solid fa-arrow-right"></i></span>
@@ -153,31 +179,120 @@
                 <div class="flex items-center gap-2"><i class="fa-solid fa-arrow-right text-[#97BEC6]"></i><input type="date" id="filterEnd" class="form-input !pl-3 w-auto text-xs"></div>
                 <button onclick="renderAnalytics()" class="btn-main px-6 py-2 text-xs uppercase"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i> Xem báo cáo</button>
             </div>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="statCards"></div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <div class="card p-6">
+                    <h3 class="font-bold text-[#034C5F] text-sm uppercase mb-4 text-center">Biểu đồ Doanh thu (7 ngày gần nhất)</h3>
+                    <div class="h-64 relative w-full">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 h-full content-start">
+                     <div class="card p-5 border-l-4 border-[#034C5F]">
+                        <p class="text-[9px] font-bold text-[#97BEC6]">DOANH SỐ NGOÀI</p>
+                        <h3 class="text-xl font-black text-[#034C5F] mt-1" id="statOut">0 ₫</h3>
+                    </div>
+                    <div class="card p-5 border-l-4 border-[#034C5F]">
+                        <p class="text-[9px] font-bold text-[#97BEC6]">DOANH SỐ VNL</p>
+                        <h3 class="text-xl font-black text-[#034C5F] mt-1" id="statVnl">0 ₫</h3>
+                    </div>
+                    <div class="card p-5 border-l-4 border-[#EE6457]">
+                        <p class="text-[9px] font-bold text-[#F9C4BA]">KHÁCH MỚI</p>
+                        <h3 class="text-xl font-black text-[#EE6457] mt-1" id="statNew">0 ₫</h3>
+                    </div>
+                    <div class="card p-5 border-l-4 border-[#EE6457]">
+                        <p class="text-[9px] font-bold text-[#F9C4BA]">KHÁCH TTD</p>
+                        <h3 class="text-xl font-black text-[#EE6457] mt-1" id="statTtd">0 ₫</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4" id="statCardsMain">
+                 </div>
+
             <div class="bg-white p-10 rounded-[40px] border-2 border-[#F9C4BA] text-center shadow-inner relative overflow-hidden">
                 <i class="fa-solid fa-coins absolute -left-4 -bottom-4 text-[120px] text-[#FDF5F4]"></i>
-                <p class="text-[#97BEC6] text-xs font-bold uppercase tracking-[0.3em] relative z-10">Lợi nhuận thuần giai đoạn</p>
+                <p class="text-[#97BEC6] text-xs font-bold uppercase tracking-[0.3em] relative z-10">Tổng doanh thu giai đoạn</p>
                 <h2 class="text-6xl font-black mt-2 text-[#034C5F] relative z-10" id="totalPeriodRevenue">0 ₫</h2>
+                <div class="grid grid-cols-2 gap-8 mt-6 max-w-md mx-auto relative z-10 border-t border-slate-100 pt-4">
+                     <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Tổng đơn</p>
+                        <p class="text-2xl font-bold text-slate-600" id="statTotalOrders">0</p>
+                     </div>
+                     <div>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase">Trung bình / Đơn</p>
+                        <p class="text-2xl font-bold text-slate-600" id="statAvgOrder">0 ₫</p>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-inventory" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-1">
+                    <div class="card p-6 bg-[#034C5F] text-white">
+                        <h3 class="font-bold text-sm uppercase mb-4"><i class="fa-solid fa-plus-circle mr-2"></i>Thêm sản phẩm mới</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Tên sản phẩm</label>
+                                <input type="text" id="invName" class="form-input mt-1 text-black" placeholder="Nhập tên SP...">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Giá niêm yết</label>
+                                    <input type="number" id="invPrice" class="form-input mt-1 text-black" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Số lượng ban đầu</label>
+                                    <input type="number" id="invQty" class="form-input mt-1 text-black" placeholder="0">
+                                </div>
+                            </div>
+                            <button onclick="addInventoryProduct()" class="w-full py-3 bg-[#EE6457] rounded-xl font-bold hover:bg-[#d85449] transition-all">THÊM VÀO KHO</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2">
+                    <div class="card overflow-hidden h-full flex flex-col">
+                        <div class="p-4 bg-white border-b border-soft-pink flex justify-between items-center">
+                            <h3 class="font-bold text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-warehouse mr-2"></i>Quản lý kho hàng</h3>
+                            <span class="text-[10px] text-slate-400 italic">Nhập trực tiếp vào ô để sửa</span>
+                        </div>
+                        <div class="overflow-y-auto max-h-[600px] flex-1">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase sticky top-0 z-10 shadow-sm">
+                                    <tr>
+                                        <th class="p-3">Tên sản phẩm</th>
+                                        <th class="p-3 w-24">Giá bán</th>
+                                        <th class="p-3 w-20 text-center">Tồn kho</th>
+                                        <th class="p-3 text-right">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTableBody" class="divide-y divide-[#F9C4BA]/20"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div id="view-customers" class="hidden space-y-4">
             <div class="card overflow-hidden">
                 <div class="p-4 bg-[#034C5F] text-white flex justify-between items-center">
-                    <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng & CRM</h3>
+                    <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng</h3>
                     <button onclick="exportCustomersToExcel()" class="text-[10px] bg-white/20 px-3 py-1 rounded-lg border border-white/30 hover:bg-white/40"><i class="fa-solid fa-download mr-1"></i> Tải CSV</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm min-w-[1000px]">
                         <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
                             <tr>
-                                <th class="p-4"><i class="fa-solid fa-user mr-1"></i> Tên Khách</th>
-                                <th class="p-4"><i class="fa-solid fa-phone mr-1"></i> Số điện thoại</th>
-                                <th class="p-4"><i class="fa-solid fa-map-location mr-1"></i> Địa chỉ chi tiết</th>
-                                <th class="p-4"><i class="fa-solid fa-cake-candles mr-1"></i> Sinh nhật</th>
-                                <th class="p-4"><i class="fa-solid fa-briefcase mr-1"></i> Công việc</th>
-                                <th class="p-4"><i class="fa-solid fa-note-sticky mr-1"></i> Ghi chú</th>
-                                <th class="p-4 text-right"><i class="fa-solid fa-star text-yellow-500 mr-1"></i> Tổng chi</th>
+                                <th class="p-4">Tên Khách</th>
+                                <th class="p-4">Số điện thoại</th>
+                                <th class="p-4">Địa chỉ</th>
+                                <th class="p-4">Sinh nhật</th>
+                                <th class="p-4">Công việc</th>
+                                <th class="p-4">Ghi chú</th>
+                                <th class="p-4 text-right">Tổng chi</th>
                             </tr>
                         </thead>
                         <tbody id="customerTableBody" class="divide-y divide-[#F9C4BA]/30"></tbody>
@@ -192,7 +307,22 @@
             <div id="invoiceContent" class="bg-white rounded-[32px] overflow-hidden shadow-2xl" style="width: 450px;"></div>
             <div class="mt-4 flex gap-3">
                 <button onclick="closeModal()" class="flex-1 bg-white/10 py-4 rounded-xl text-white font-bold border border-white/20 hover:bg-white/20 transition-all">ĐÓNG</button>
-                <button onclick="downloadImage()" class="flex-1 bg-[#EE6457] py-4 rounded-xl text-white font-bold shadow-lg hover:bg-[#d85449] transition-all"><i class="fa-solid fa-image mr-2"></i>LƯU ẢNH HÓA ĐƠN</button>
+                <button onclick="downloadImage()" class="flex-1 bg-[#EE6457] py-4 rounded-xl text-white font-bold shadow-lg hover:bg-[#d85449] transition-all"><i class="fa-solid fa-image mr-2"></i>LƯU ẢNH</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="exportModal" class="fixed inset-0 bg-[#034C5F]/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 border-[#F9C4BA]">
+            <h3 class="text-[#034C5F] font-black text-xl mb-4 text-center uppercase">Xuất dữ liệu Excel</h3>
+            <div class="space-y-4">
+                <div><label class="text-[10px] font-bold text-[#97BEC6] uppercase block mb-1">Tên File</label><input type="text" id="exportFileName" class="form-input !pl-3" placeholder="Ví dụ: Don_Hang_Thang_10"></div>
+                <div><label class="text-[10px] font-bold text-[#97BEC6] uppercase block mb-1">Từ ngày</label><input type="date" id="exportStartDate" class="form-input !pl-3"></div>
+                <div><label class="text-[10px] font-bold text-[#97BEC6] uppercase block mb-1">Đến ngày</label><input type="date" id="exportEndDate" class="form-input !pl-3"></div>
+                <div class="pt-2 flex gap-3">
+                    <button onclick="closeExportModal()" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-bold text-xs hover:bg-slate-200">HỦY</button>
+                    <button onclick="confirmExport()" class="flex-1 py-3 bg-[#EE6457] text-white rounded-xl font-bold text-xs hover:bg-[#d85449] shadow-lg">XUẤT FILE</button>
+                </div>
             </div>
         </div>
     </div>
@@ -202,52 +332,139 @@
         const STATUS_COLORS = { "Đợi gửi": "bg-slate-100 text-slate-600", "Đang giao": "bg-blue-100 text-blue-700", "HD Sử dụng": "bg-indigo-100 text-indigo-700", "Chăm sóc": "bg-emerald-100 text-emerald-700", "Xử lý": "bg-amber-100 text-amber-700", "Đã Hủy": "bg-red-100 text-red-700" };
         const OUT_KEYWORDS = ['BND', 'NƯỚC HOA', 'SERUM'];
 
-        let orders = JSON.parse(localStorage.getItem('v92_orders')) || [];
-        let customers = JSON.parse(localStorage.getItem('v92_customers')) || {};
+        // KHỞI TẠO DỮ LIỆU
+        let orders = JSON.parse(localStorage.getItem('v11_orders')) || [];
+        let customers = JSON.parse(localStorage.getItem('v11_customers')) || {};
+        // Inventory Structure: { name, price, qty (stock) }
+        let inventory = JSON.parse(localStorage.getItem('v11_inventory')) || [];
+        let revenueChartInstance = null; // Biến lưu biểu đồ
+
         const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
-        // -- CRM LOGIC --
-        function renderCustomerCRM() {
-            const tbody = document.getElementById('customerTableBody');
-            const spendings = {}; 
-            orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
-            tbody.innerHTML = Object.keys(customers).map(phone => {
-                const c = customers[phone];
+        // --- BACKUP & RESTORE ---
+        function backupData() {
+            const data = { version: "11.0", timestamp: new Date().toISOString(), orders, customers, inventory };
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a"); a.href = url; a.download = `SunsetShop_FULL_BACKUP_${new Date().toISOString().slice(0,10)}.json`; a.click();
+            showToast("Đã tải xuống file sao lưu!");
+        }
+
+        function restoreData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if(!confirm("CẢNH BÁO: Dữ liệu hiện tại sẽ bị ghi đè. Hãy chắc chắn bạn đã sao lưu trước đó!")) { input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.orders && data.customers) {
+                        orders = data.orders; customers = data.customers;
+                        if(data.inventory) inventory = data.inventory;
+                        localStorage.setItem('v11_orders', JSON.stringify(orders));
+                        localStorage.setItem('v11_customers', JSON.stringify(customers));
+                        localStorage.setItem('v11_inventory', JSON.stringify(inventory));
+                        alert("Khôi phục thành công! Trang sẽ tải lại."); location.reload();
+                    } else alert("File lỗi.");
+                } catch (err) { alert("Lỗi đọc file: " + err.message); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- INVENTORY MANAGEMENT (NEW: Quantity Tracking) ---
+        function saveInventory() {
+            localStorage.setItem('v11_inventory', JSON.stringify(inventory));
+            renderInventory();
+            updateProductDatalist();
+        }
+
+        function addInventoryProduct() {
+            const name = document.getElementById('invName').value.trim();
+            const price = parseFloat(document.getElementById('invPrice').value);
+            const qty = parseInt(document.getElementById('invQty').value) || 0;
+            if(!name) return showToast("Nhập tên sản phẩm!");
+            
+            const existing = inventory.find(p => p.name.toLowerCase() === name.toLowerCase());
+            if(existing) return alert("Sản phẩm đã tồn tại trong kho!");
+
+            inventory.push({ name, price: price || 0, qty: qty });
+            document.getElementById('invName').value = '';
+            document.getElementById('invPrice').value = '';
+            document.getElementById('invQty').value = '';
+            saveInventory();
+            showToast("Đã nhập kho!");
+        }
+
+        function updateInventoryProduct(index, field, value) {
+            if(field === 'qty') inventory[index].qty = parseInt(value) || 0;
+            else if(field === 'price') inventory[index].price = parseFloat(value) || 0;
+            else inventory[index][field] = value;
+            saveInventory();
+        }
+
+        function deleteInventoryProduct(index) {
+            if(confirm("Xóa sản phẩm này khỏi kho?")) { inventory.splice(index, 1); saveInventory(); }
+        }
+
+        function renderInventory() {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = inventory.map((p, idx) => {
+                // Logic cảnh báo tồn kho
+                const isLow = p.qty <= 5;
+                const stockClass = isLow ? "stock-low" : "stock-ok";
                 return `
                 <tr class="hover:bg-white transition-colors">
-                    <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
-                    <td class="p-3"><input type="text" value="${phone}" onchange="updateCustomerPhone('${phone}', this.value)" class="crm-input font-mono text-[#EE6457]"></td>
-                    <td class="p-3"><input type="text" value="${c.address || ''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input" placeholder="Địa chỉ..."></td>
-                    <td class="p-3"><input type="date" value="${c.birthday || ''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input text-xs border border-transparent hover:border-[#F9C4BA]"></td>
-                    <td class="p-3"><input type="text" value="${c.job || ''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td>
-                    <td class="p-3"><input type="text" value="${c.note || ''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td>
-                    <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone] || 0)}</td>
+                    <td class="p-3"><input type="text" value="${p.name}" onchange="updateInventoryProduct(${idx}, 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
+                    <td class="p-3"><input type="number" value="${p.price}" onchange="updateInventoryProduct(${idx}, 'price', this.value)" class="crm-input text-[#EE6457]"></td>
+                    <td class="p-3 text-center">
+                        <input type="number" value="${p.qty}" onchange="updateInventoryProduct(${idx}, 'qty', this.value)" class="crm-input text-center ${stockClass}" style="font-size:14px;">
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="deleteInventoryProduct(${idx})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 </tr>`;
             }).join('');
         }
 
-        function updateCustomerField(phone, field, value) { if (customers[phone]) { customers[phone][field] = value; saveCRM(); } }
-        function updateCustomerPhone(oldPhone, newPhone) {
-            if (newPhone === oldPhone) return;
-            if (customers[newPhone]) { alert("SĐT này đã tồn tại!"); renderCustomerCRM(); return; }
-            customers[newPhone] = { ...customers[oldPhone] }; delete customers[oldPhone];
-            orders.forEach(o => { if (o.customer.phone === oldPhone) o.customer.phone = newPhone; });
-            localStorage.setItem('v92_orders', JSON.stringify(orders)); saveCRM(); renderCustomerCRM(); updateDatalists();
+        function updateProductDatalist() {
+            const datalist = document.getElementById('productDataList');
+            datalist.innerHTML = inventory.map(p => `<option value="${p.name}">Kho: ${p.qty} | Giá: ${formatMoney(p.price)}</option>`).join('');
         }
-        function saveCRM() { localStorage.setItem('v92_customers', JSON.stringify(customers)); }
 
-        // -- ORDER & UI --
+        // --- ORDER & STOCK LOGIC ---
         function addProductRow(name = "", price = "", qty = 1) {
             const container = document.getElementById('product-list');
             const div = document.createElement('div');
-            div.className = "grid grid-cols-1 sm:grid-cols-[2fr,1fr,0.5fr,auto] gap-2 bg-white p-3 border border-soft-pink rounded-xl items-center shadow-sm";
+            div.className = "grid grid-cols-1 sm:grid-cols-[2fr,1fr,0.5fr,auto] gap-2 bg-white p-3 border border-soft-pink rounded-xl items-center shadow-sm product-row";
             div.innerHTML = `
-                <div class="input-group"><i class="fa-solid fa-cube input-icon"></i><input type="text" class="form-input p-name" placeholder="Tên SP..." value="${name}"></div>
-                <div class="input-group"><i class="fa-solid fa-money-bill-1-wave input-icon"></i><input type="number" class="form-input p-price font-bold text-[#034C5F]" placeholder="Giá" value="${price}" oninput="calculateTotal()"></div>
+                <div class="input-group">
+                    <i class="fa-solid fa-cube input-icon"></i>
+                    <input type="text" class="form-input p-name" placeholder="Tên SP..." value="${name}" list="productDataList" onchange="autoFillProductPrice(this)">
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-money-bill-1-wave input-icon"></i>
+                    <input type="number" class="form-input p-price font-bold text-[#034C5F]" placeholder="Giá" value="${price}" oninput="calculateTotal()">
+                </div>
                 <input type="number" class="form-input !pl-3 p-qty text-center" value="${qty}" oninput="calculateTotal()">
                 <button type="button" onclick="this.parentElement.remove(); calculateTotal()" class="text-[#F9C4BA] hover:text-[#EE6457] p-2 transition-colors"><i class="fa-solid fa-trash-can text-lg"></i></button>`;
             container.appendChild(div);
             calculateTotal();
+        }
+
+        function autoFillProductPrice(inputElement) {
+            const val = inputElement.value;
+            // Xử lý lấy tên nếu chọn từ datalist có format "Name | stock..."
+            const pName = inventory.find(p => p.name === val) ? val : inventory.find(p => inputElement.value.includes(p.name))?.name;
+            
+            if(pName) {
+                const product = inventory.find(p => p.name === pName);
+                if (product) {
+                    inputElement.value = product.name; // Reset lại tên sạch
+                    const row = inputElement.closest('.product-row');
+                    row.querySelector('.p-price').value = product.price;
+                    calculateTotal();
+                }
+            }
         }
 
         function calculateTotal() {
@@ -271,28 +488,45 @@
             const name = document.getElementById('custName').value;
             const addr = document.getElementById('custAddr').value;
             const type = document.getElementById('custType').value;
+            const isEdit = document.getElementById('editOrderId').value !== "";
             
-            // Xử lý thông báo tùy chỉnh thay cho thông báo mặc định
-            if(!phone || !name) return alert("Bạn quên điền Tên hoặc SĐT của khách rồi!");
+            if(!phone || !name) return alert("Thiếu Tên hoặc SĐT!");
             
             let products = [];
-            let productCheck = true;
+            let valid = true;
             document.querySelectorAll('.p-name').forEach((el, idx) => {
                 const pPrice = document.querySelectorAll('.p-price')[idx].value;
-                if(!el.value || !pPrice) productCheck = false;
-                products.push({ name: el.value, price: parseFloat(pPrice) || 0, qty: parseInt(document.querySelectorAll('.p-qty')[idx].value) || 1 });
+                const pQty = parseInt(document.querySelectorAll('.p-qty')[idx].value) || 1;
+                if(!el.value || !pPrice) valid = false;
+                products.push({ name: el.value, price: parseFloat(pPrice) || 0, qty: pQty });
             });
+            
+            if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
 
-            if(products.length === 0) return alert("Đơn hàng phải có ít nhất 1 sản phẩm!");
-            if(!productCheck) return alert("Vui lòng điền đủ Tên và Giá sản phẩm!");
+            // --- TRỪ TỒN KHO (Chỉ áp dụng khi tạo đơn mới để tránh lỗi logic phức tạp) ---
+            if (!isEdit) {
+                products.forEach(p => {
+                    const invItem = inventory.find(i => i.name.toLowerCase() === p.name.toLowerCase());
+                    if (invItem) {
+                        invItem.qty = Math.max(0, invItem.qty - p.qty); // Trừ kho
+                    } else {
+                        // Nếu chưa có trong kho, tự thêm vào với số lượng 0 (âm)
+                        inventory.push({ name: p.name, price: p.price, qty: 0 }); // Không trừ âm để tránh khó hiểu, set 0
+                    }
+                });
+                saveInventory();
+            } else {
+                showToast("Lưu ý: Đang sửa đơn. Kho hàng sẽ KHÔNG tự động trừ/cộng lại.");
+            }
 
             if(!customers[phone]) customers[phone] = { name, address: addr, birthday: '', job: '', note: '' };
             else { customers[phone].name = name; customers[phone].address = addr; }
+
             const { subtotal, total } = calculateTotal();
-            const id = document.getElementById('editOrderId').value;
+            const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
             const order = { 
-                id: id ? parseInt(id) : Date.now(), 
-                timestamp: id ? orders.find(x=>x.id==id).timestamp : Date.now(), 
+                id, 
+                timestamp: isEdit ? orders.find(x=>x.id==id).timestamp : Date.now(), 
                 customer: { name, phone, addr, type }, 
                 products, 
                 payMethod: document.getElementById('payMethod').value, 
@@ -301,38 +535,34 @@
                 date: document.getElementById('shipDate').value, 
                 deliveryDate: document.getElementById('deliveryDate').value, 
                 note: document.getElementById('orderNote').value.trim(), 
-                subtotal, 
-                total, 
-                status: id ? orders.find(x => x.id == id).status : "Đợi gửi" 
+                subtotal, total, 
+                status: isEdit ? orders.find(x => x.id == id).status : "Đợi gửi" 
             };
-            if(id) orders[orders.findIndex(o => o.id == id)] = order; else orders.unshift(order);
-            localStorage.setItem('v92_orders', JSON.stringify(orders)); saveCRM(); renderTable(); resetForm(); updateDatalists();
-            showToast(id ? "Cập nhật thành công!" : "Đã lưu đơn hàng!");
+            
+            if(isEdit) orders[orders.findIndex(o => o.id == id)] = order; else orders.unshift(order);
+            
+            localStorage.setItem('v11_orders', JSON.stringify(orders)); 
+            saveCRM(); 
+            renderTable(); 
+            resetForm(); 
+            updateDatalists();
+            showToast("Đã lưu thành công!");
         }
 
-        function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.innerText = msg;
-            t.className = "show";
-            setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000);
-        }
-
-        function copyCustomerInfo(name, phone, addr) {
-            const text = `${name}\n${phone}\n${addr}`;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("Đã chép: Tên, SĐT, Địa chỉ");
-            });
-        }
-
+        // --- RENDER TABLE & SEARCH ---
         function renderTable() {
             const fStart = document.getElementById('listFilterStart').value;
             const fEnd = document.getElementById('listFilterEnd').value;
             const fType = document.getElementById('listFilterType').value;
+            const search = document.getElementById('searchOrderInput').value.toLowerCase(); // Lấy từ khóa tìm kiếm
+
             let filtered = orders.filter(o => {
                 const dateMatch = (!fStart || o.date >= fStart) && (!fEnd || o.date <= fEnd);
                 const typeMatch = (fType === 'all' || o.customer.type === fType);
-                return dateMatch && typeMatch;
+                const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search); // Logic tìm kiếm
+                return dateMatch && typeMatch && searchMatch;
             });
+
             document.getElementById('orderTableBody').innerHTML = filtered.map(o => `
                 <tr class="hover:bg-[#FDF5F4]/50 transition-colors">
                     <td class="p-4">
@@ -342,12 +572,12 @@
                                 <span class="text-[9px] px-1.5 py-0.5 rounded ${o.customer.type === 'ttd' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'} font-bold uppercase ml-1">${o.customer.type === 'ttd' ? 'TTD' : 'Mới'}</span>
                                 <br><span class="text-xs text-[#97BEC6]">${o.customer.phone}</span>
                             </div>
-                            <button onclick="copyCustomerInfo('${o.customer.name}', '${o.customer.phone}', '${o.customer.addr.replace(/\n/g, ' ')}')" class="bg-[#FDF5F4] text-[#034C5F] w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#034C5F] hover:text-white transition-all shadow-sm" title="Copy thông tin khách">
+                            <button onclick="copyCustomerInfo('${o.customer.name}', '${o.customer.phone}', '${o.customer.addr.replace(/\n/g, ' ')}')" class="bg-[#FDF5F4] text-[#034C5F] w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#034C5F] hover:text-white transition-all shadow-sm">
                                 <i class="fa-solid fa-copy text-[10px]"></i>
                             </button>
                         </div>
                     </td>
-                    <td class="p-4 text-xs text-slate-500 line-clamp-1">${o.products.map(p => `${p.name}`).join(', ')}</td>
+                    <td class="p-4 text-xs text-slate-500 line-clamp-1">${o.products.map(p => `${p.name} (x${p.qty})`).join(', ')}</td>
                     <td class="p-4 text-center"><button onclick="updateStatus(${o.id})" class="status-badge ${STATUS_COLORS[o.status]}">${o.status}</button></td>
                     <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
                     <td class="p-4 text-center">
@@ -358,6 +588,146 @@
                         </div>
                     </td>
                 </tr>`).join('');
+        }
+
+        // --- ANALYTICS & CHART ---
+        function renderAnalytics() {
+            const start = document.getElementById('filterStart').value;
+            const end = document.getElementById('filterEnd').value;
+            let filtered = orders.filter(o => o.status !== "Đã Hủy" && (!start || o.date >= start) && (!end || o.date <= end));
+            
+            let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0;
+            let grandTotal = 0;
+            
+            // Map doanh thu theo ngày cho biểu đồ (7 ngày gần nhất nếu không filter, hoặc theo filter)
+            let dailyRevenue = {}; 
+
+            filtered.forEach(o => {
+                const net = o.total - o.shipFee;
+                grandTotal += net;
+                
+                // Cộng dồn theo ngày
+                if(dailyRevenue[o.date]) dailyRevenue[o.date] += net;
+                else dailyRevenue[o.date] = net;
+
+                o.products.forEach(p => {
+                    const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
+                    if(OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k))) sOut += ratio * net; else sVnl += ratio * net;
+                });
+                if(o.customer.type === 'ttd') sTtd += net; else sNew += net;
+            });
+
+            // Update UI Stats
+            document.getElementById('statOut').innerText = formatMoney(sOut);
+            document.getElementById('statVnl').innerText = formatMoney(sVnl);
+            document.getElementById('statNew').innerText = formatMoney(sNew);
+            document.getElementById('statTtd').innerText = formatMoney(sTtd);
+            document.getElementById('totalPeriodRevenue').innerText = formatMoney(sOut + sVnl);
+            document.getElementById('statTotalOrders').innerText = filtered.length;
+            document.getElementById('statAvgOrder').innerText = filtered.length ? formatMoney(grandTotal/filtered.length) : '0 ₫';
+
+            // DRAW CHART
+            drawRevenueChart(dailyRevenue);
+        }
+
+        function drawRevenueChart(dataObj) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Sort dates
+            const sortedDates = Object.keys(dataObj).sort();
+            // Lấy 7 ngày cuối nếu dữ liệu quá nhiều
+            const labels = sortedDates.length > 7 ? sortedDates.slice(-7) : sortedDates;
+            const dataValues = labels.map(date => dataObj[date]);
+
+            if (revenueChartInstance) revenueChartInstance.destroy();
+
+            revenueChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(d => d.split('-').reverse().join('/')),
+                    datasets: [{
+                        label: 'Doanh thu ngày',
+                        data: dataValues,
+                        backgroundColor: '#034C5F',
+                        borderRadius: 4,
+                        barThickness: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // --- HELPER FUNCTIONS ---
+        function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.className = "show"; setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000); }
+        function copyCustomerInfo(n, p, a) { navigator.clipboard.writeText(`${n}\n${p}\n${a}`).then(() => showToast("Đã copy info!")); }
+        function saveCRM() { localStorage.setItem('v11_customers', JSON.stringify(customers)); }
+        function autoFillByPhone() { const p = document.getElementById('custPhone').value; if(customers[p]) { document.getElementById('custName').value = customers[p].name; document.getElementById('custAddr').value = customers[p].address; } }
+        function autoFillByName() { const n = document.getElementById('custName').value; const p = Object.keys(customers).find(k => customers[k].name === n); if(p) { document.getElementById('custPhone').value = p; document.getElementById('custAddr').value = customers[p].address; } }
+        function updateDatalists() { 
+            document.getElementById('phoneDataList').innerHTML = Object.keys(customers).map(p => `<option value="${p}">${customers[p].name}</option>`).join('');
+            document.getElementById('nameDataList').innerHTML = Object.keys(customers).map(p => `<option value="${customers[p].name}">${p}</option>`).join('');
+        }
+        function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; localStorage.setItem('v11_orders', JSON.stringify(orders)); renderTable(); }
+        function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); localStorage.setItem('v11_orders', JSON.stringify(orders)); renderTable(); } }
+        function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
+        
+        function switchTab(t) {
+            ['view-orders', 'view-analytics', 'view-customers', 'view-inventory'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(`view-${t}`).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(btn => btn.className = "px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all");
+            document.getElementById(`tab-${t}`).className = "px-3 md:px-4 py-2 rounded-xl text-sm font-bold bg-white text-[#034C5F] shadow-sm";
+            if(t === 'analytics') renderAnalytics();
+            if(t === 'inventory') renderInventory();
+            if(t === 'customers') renderCustomerCRM();
+        }
+
+        function renderCustomerCRM() {
+            const tbody = document.getElementById('customerTableBody');
+            const spendings = {}; orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
+            tbody.innerHTML = Object.keys(customers).map(phone => {
+                const c = customers[phone];
+                return `<tr>
+                    <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
+                    <td class="p-3">${phone}</td>
+                    <td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td>
+                    <td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input"></td>
+                    <td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td>
+                    <td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td>
+                    <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
+                </tr>`;
+            }).join('');
+        }
+        function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
+
+        function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
+        
+        function editOrder(id) {
+            const o = orders.find(x => x.id === id);
+            document.getElementById('editOrderId').value = o.id;
+            document.getElementById('custPhone').value = o.customer.phone;
+            document.getElementById('custName').value = o.customer.name;
+            document.getElementById('custAddr').value = o.customer.addr;
+            document.getElementById('custType').value = o.customer.type || 'new';
+            document.getElementById('product-list').innerHTML = "";
+            o.products.forEach(p => addProductRow(p.name, p.price, p.qty));
+            document.getElementById('payMethod').value = o.payMethod;
+            document.getElementById('shipFee').value = o.shipFee;
+            document.getElementById('discountVal').value = o.discount.val;
+            document.getElementById('discountType').value = o.discount.type;
+            document.getElementById('shipDate').value = o.date;
+            document.getElementById('deliveryDate').value = o.deliveryDate;
+            document.getElementById('orderNote').value = o.note || '';
+            document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-rotate mr-2"></i>Cập nhật';
+            calculateTotal();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function openInvoice(id) {
@@ -393,80 +763,37 @@
                     <div style="text-align:center; padding-top:10px; border-top:1px dashed #F9C4BA;">
                         <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p>
                         <p style="font-size:10px; color:#97BEC6; margin-top:4px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p>
-                    </div>
+                     </div>
                 </div>`;
             document.getElementById('invoiceModal').classList.remove('hidden');
         }
-
-        // --- Giữ nguyên các hàm logic khác từ bản cũ ---
-        function exportOrdersToExcel() {
-            if (orders.length === 0) return alert("Không có đơn hàng để xuất!");
-            let csv = "\ufeffMã Đơn,Ngày Gửi,Ngày Nhận,Tên Khách,Số Điện Thoại,Loại Khách,Địa Chỉ,Sản Phẩm (Chi Tiết),Tổng Tiền Hàng,Phí Ship,Giảm Giá,Tổng Thực Thu,Thanh Toán,Trạng Thái,Ghi Chú\n";
-            orders.forEach(o => {
-                const productDetails = o.products.map(p => `${p.name} (${p.price} x ${p.qty})`).join(' | ');
-                const discountStr = `${o.discount.val}${o.discount.type === 'percent' ? '%' : 'đ'}`;
-                csv += `${o.id},${o.date},${o.deliveryDate},"${o.customer.name}","${o.customer.phone}","${o.customer.type.toUpperCase()}","${o.customer.addr}","${productDetails}",${o.subtotal},${o.shipFee},"${discountStr}",${o.total},"${o.payMethod}","${o.status}","${o.note || ''}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `SunsetShop_Full_${new Date().toISOString().slice(0,10)}.csv`;
-            link.click();
-        }
-
-        function renderAnalytics() {
-            const start = document.getElementById('filterStart').value;
-            const end = document.getElementById('filterEnd').value;
-            let filtered = orders.filter(o => o.status !== "Đã Hủy" && (!start || o.date >= start) && (!end || o.date <= end));
-            let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0;
-            filtered.forEach(o => {
-                const netOrder = o.total - o.shipFee;
-                o.products.forEach(p => {
-                    const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
-                    if(OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k))) sOut += ratio * netOrder; else sVnl += ratio * netOrder;
-                });
-                if(o.customer.type === 'ttd') sTtd += netOrder; else sNew += netOrder;
-            });
-            document.getElementById('statCards').innerHTML = `
-                <div class="card p-5 border-l-4 border-[#034C5F]"><p class="text-[9px] font-bold text-[#97BEC6]">DS NGOÀI</p><h3 class="text-xl font-black text-[#034C5F] mt-1">${formatMoney(sOut)}</h3></div>
-                <div class="card p-5 border-l-4 border-[#034C5F]"><p class="text-[9px] font-bold text-[#97BEC6]">DS VNL</p><h3 class="text-xl font-black text-[#034C5F] mt-1">${formatMoney(sVnl)}</h3></div>
-                <div class="card p-5 border-l-4 border-[#EE6457]"><p class="text-[9px] font-bold text-[#F9C4BA]">DS MỚI</p><h3 class="text-xl font-black text-[#EE6457] mt-1">${formatMoney(sNew)}</h3></div>
-                <div class="card p-5 border-l-4 border-[#EE6457]"><p class="text-[9px] font-bold text-[#F9C4BA]">DS TTD</p><h3 class="text-xl font-black text-[#EE6457] mt-1">${formatMoney(sTtd)}</h3></div>`;
-            document.getElementById('totalPeriodRevenue').innerText = formatMoney(sOut + sVnl);
-        }
-
-        function switchTab(t) {
-            ['view-orders', 'view-analytics', 'view-customers'].forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById(`view-${t}`).classList.remove('hidden');
-            document.querySelectorAll('nav button').forEach(btn => btn.className = "px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F]");
-            document.getElementById(`tab-${t}`).className = "px-4 py-2 rounded-xl text-sm font-bold bg-white text-[#034C5F] shadow-sm";
-            if(t === 'analytics') renderAnalytics();
-            if(t === 'customers') renderCustomerCRM();
-        }
-        function autoFillByPhone() { const p = document.getElementById('custPhone').value; if(customers[p]) { document.getElementById('custName').value = customers[p].name; document.getElementById('custAddr').value = customers[p].address; } }
-        function autoFillByName() { const n = document.getElementById('custName').value; const p = Object.keys(customers).find(k => customers[k].name === n); if(p) { document.getElementById('custPhone').value = p; document.getElementById('custAddr').value = customers[p].address; } }
-        function updateDatalists() {
-            document.getElementById('phoneDataList').innerHTML = Object.keys(customers).map(p => `<option value="${p}">${customers[p].name}</option>`).join('');
-            document.getElementById('nameDataList').innerHTML = Object.keys(customers).map(p => `<option value="${customers[p].name}">${p}</option>`).join('');
-        }
-        function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; localStorage.setItem('v92_orders', JSON.stringify(orders)); renderTable(); }
-        function deleteOrder(id) { if(confirm("Xoá vĩnh viễn đơn hàng này?")) { orders = orders.filter(o => o.id !== id); localStorage.setItem('v92_orders', JSON.stringify(orders)); renderTable(); } }
-        function autoSetDeliveryDate() { const shipDateVal = document.getElementById('shipDate').value; if (shipDateVal) { const date = new Date(shipDateVal); date.setDate(date.getDate() + 3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
-        function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn hàng'; }
-        function editOrder(id) { const o = orders.find(x => x.id === id); document.getElementById('editOrderId').value = o.id; document.getElementById('custPhone').value = o.customer.phone; document.getElementById('custName').value = o.customer.name; document.getElementById('custAddr').value = o.customer.addr; document.getElementById('custType').value = o.customer.type || 'new'; document.getElementById('product-list').innerHTML = ""; o.products.forEach(p => addProductRow(p.name, p.price, p.qty)); document.getElementById('payMethod').value = o.payMethod; document.getElementById('shipFee').value = o.shipFee; document.getElementById('discountVal').value = o.discount.val; document.getElementById('discountType').value = o.discount.type; document.getElementById('shipDate').value = o.date; document.getElementById('deliveryDate').value = o.deliveryDate; document.getElementById('orderNote').value = o.note || ''; document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-rotate mr-2"></i>Cập nhật đơn'; calculateTotal(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
         function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
         function downloadImage() { html2canvas(document.getElementById('invoiceContent'), { scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `HD_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); }); }
+        
+        function openExportModal() {
+            document.getElementById('exportModal').classList.remove('hidden');
+            const today = new Date(); document.getElementById('exportStartDate').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            document.getElementById('exportEndDate').value = today.toISOString().split('T')[0];
+            document.getElementById('exportFileName').value = `Don_Hang_Thang_${today.getMonth()+1}`;
+        }
+        function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
+        function confirmExport() {
+            const fileName = document.getElementById('exportFileName').value.trim() || `Export_${Date.now()}`;
+            const s = document.getElementById('exportStartDate').value; const e = document.getElementById('exportEndDate').value;
+            const data = orders.filter(o => (!s || o.date >= s) && (!e || o.date <= e));
+            let csv = "\ufeffMã Đơn,Ngày,Tên,SĐT,Sản Phẩm,Tổng Tiền\n";
+            data.forEach(o => csv += `${o.id},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`);
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal();
+        }
+        function exportCustomersToExcel() {
+            let csv = "\ufeffTên,SĐT,Địa Chỉ,Tổng Chi\n";
+            Object.keys(customers).forEach(p => { csv += `"${customers[p].name}","${p}","${customers[p].address}","${orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0)}"\n`; });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "KhachHang.csv"; link.click();
+        }
         function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
 
-        function exportCustomersToExcel() {
-            let csv = "\ufeffTên Khách,Số Điện Thoại,Địa Chỉ,Sinh Nhật,Công Việc,Ghi Chú\n";
-            Object.keys(customers).forEach(p => { const c = customers[p]; csv += `"${c.name}","${p}","${c.address}","${c.birthday}","${c.job}","${c.note}"\n`; });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "DuLieuKhachHang.csv"; link.click();
-        }
-
-        document.getElementById('shipDate').valueAsDate = new Date();
-        autoSetDeliveryDate(); addProductRow(); renderTable(); updateDatalists();
+        // INIT
+        document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); addProductRow(); renderTable(); updateDatalists(); renderInventory(); updateProductDatalist();
     </script>
 </body>
 </html>
