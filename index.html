@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Thêm Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -350,19 +349,19 @@
     <script>
         // --- 1. ĐIỀN CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY ---
         const firebaseConfig = {
-  apiKey: "AIzaSyBR83SJnuVtaoGKZ6LYKEQkzK4yQtWLOF0",
-  authDomain: "ql-sale.firebaseapp.com",
-  databaseURL: "https://ql-sale-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "ql-sale",
-  storageBucket: "ql-sale.firebasestorage.app",
-  messagingSenderId: "374149663544",
-  appId: "1:374149663544:web:f1fd9b0ad23d9aece44fcd",
-  measurementId: "G-G02MNTRZJ6"
-};
+            apiKey: "AIzaSyBR83SJnuVtaoGKZ6LYKEQkzK4yQtWLOF0",
+            authDomain: "ql-sale.firebaseapp.com",
+            databaseURL: "https://ql-sale-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "ql-sale",
+            storageBucket: "ql-sale.firebasestorage.app",
+            messagingSenderId: "374149663544",
+            appId: "1:374149663544:web:f1fd9b0ad23d9aece44fcd",
+            measurementId: "G-G02MNTRZJ6"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // --- 2. NHẬN DIỆN NHÂN VIÊN (KHÔNG ĐỔI GIAO DIỆN) ---
+        // --- 2. NHẬN DIỆN NHÂN VIÊN ---
         let employeeId = localStorage.getItem('v11_employee_id');
         if (!employeeId) {
             employeeId = prompt("👋 Chào bạn, vui lòng nhập MÃ NHÂN VIÊN của bạn (Ví dụ: NV01, NV02...).\nMã này giúp đồng bộ dữ liệu của bạn giữa các thiết bị:");
@@ -374,7 +373,6 @@
             }
         }
         
-        // Tạo đường dẫn riêng biệt cho từng nhân viên trên Firebase
         const userRef = db.ref('SunsetShopData/Employees/' + employeeId);
 
         // --- 3. LOGIC CHÍNH ĐÃ ĐƯỢC CHUYỂN SANG ĐỒNG BỘ REALTIME ---
@@ -547,12 +545,15 @@
         }
 
         function saveOrder() {
-            const phone = document.getElementById('custPhone').value;
-            const name = document.getElementById('custName').value;
+            // FIX: Sử dụng trim() để xóa khoảng trắng thừa ở SĐT và Tên
+            const phone = document.getElementById('custPhone').value.trim();
+            const name = document.getElementById('custName').value.trim();
             const addr = document.getElementById('custAddr').value;
             const type = document.getElementById('custType').value;
             const isEdit = document.getElementById('editOrderId').value !== "";
+            
             if(!phone || !name) return alert("Thiếu Tên hoặc SĐT!");
+            
             let products = [];
             let valid = true;
             document.querySelectorAll('.p-name').forEach((el, idx) => {
@@ -561,15 +562,18 @@
                 if(!el.value || !pPrice) valid = false;
                 products.push({ name: el.value, price: parseFloat(pPrice) || 0, qty: pQty });
             });
+            
             if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
+            
             if (!isEdit) {
                 products.forEach(p => {
                     const invItem = inventory.find(i => i.name.toLowerCase() === p.name.toLowerCase());
                     if (invItem) invItem.qty = Math.max(0, invItem.qty - p.qty);
                     else inventory.push({ name: p.name, price: p.price, qty: 0 });
                 });
-                saveInventory();
             }
+            
+            // Xử lý thông tin Khách Hàng
             if(!customers[phone]) {
                 customers[phone] = { 
                     name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('shipDate').value, status: 'Vãn lai' 
@@ -593,9 +597,13 @@
             
             if(isEdit) orders[orders.findIndex(o => o.id == id)] = order; else orders.unshift(order);
             
-            // LƯU LÊN FIREBASE
-            userRef.child('v11_orders').set(orders); 
-            saveCRM(); 
+            // FIX: Gộp tất cả lệnh lưu lên Firebase thành 1 lệnh update duy nhất để tránh xung đột dữ liệu Realtime
+            userRef.update({
+                'v11_orders': orders,
+                'v11_customers': customers,
+                'v11_inventory': inventory
+            });
+            
             resetForm(); 
             showToast("Đã lưu đồng bộ thành công!");
         }
