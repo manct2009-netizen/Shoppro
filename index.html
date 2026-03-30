@@ -9,6 +9,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Thêm Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         :root { --deep-teal: #034C5F; --light-teal: #97BEC6; --coral: #EE6457; --soft-pink: #F9C4BA; --bg-creamy: #FDF5F4; }
@@ -23,7 +27,6 @@
         .crm-input:focus { background: white; box-shadow: 0 0 0 1px var(--light-teal); outline: none; }
         .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
         
-        /* CSS cho cảnh báo tồn kho */
         .stock-low { color: #EE6457; font-weight: bold; }
         .stock-ok { color: #034C5F; }
         
@@ -207,22 +210,36 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4" id="statCardsMain">
-                 </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card p-6 border-l-8 border-red-600 bg-red-50/30">
+                    <h3 class="font-bold text-red-700 text-sm uppercase mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-bomb"></i> Thống kê đơn BOM
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-red-100 pb-2">
+                            <span class="text-xs text-red-600 font-bold">Số lượng đơn bom:</span>
+                            <span class="text-2xl font-black text-red-700" id="statBomCount">0</span>
+                        </div>
+                        <div class="flex justify-between items-end border-b border-red-100 pb-2">
+                            <span class="text-xs text-red-600 font-bold">Tổng tiền thất thoát:</span>
+                            <span class="text-2xl font-black text-red-700" id="statBomTotal">0 ₫</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="bg-white p-10 rounded-[40px] border-2 border-[#F9C4BA] text-center shadow-inner relative overflow-hidden">
-                <i class="fa-solid fa-coins absolute -left-4 -bottom-4 text-[120px] text-[#FDF5F4]"></i>
-                <p class="text-[#97BEC6] text-xs font-bold uppercase tracking-[0.3em] relative z-10">Tổng doanh thu giai đoạn</p>
-                <h2 class="text-6xl font-black mt-2 text-[#034C5F] relative z-10" id="totalPeriodRevenue">0 ₫</h2>
-                <div class="grid grid-cols-2 gap-8 mt-6 max-w-md mx-auto relative z-10 border-t border-slate-100 pt-4">
-                     <div>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Tổng đơn</p>
-                        <p class="text-2xl font-bold text-slate-600" id="statTotalOrders">0</p>
-                     </div>
-                     <div>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase">Trung bình / Đơn</p>
-                        <p class="text-2xl font-bold text-slate-600" id="statAvgOrder">0 ₫</p>
-                     </div>
+                <div class="bg-white p-6 rounded-[40px] border-2 border-[#F9C4BA] text-center shadow-inner relative overflow-hidden flex flex-col justify-center">
+                    <p class="text-[#97BEC6] text-xs font-bold uppercase tracking-[0.3em]">Tổng doanh thu giai đoạn</p>
+                    <h2 class="text-4xl font-black mt-2 text-[#034C5F]" id="totalPeriodRevenue">0 ₫</h2>
+                    <div class="grid grid-cols-2 gap-4 mt-4 max-w-md mx-auto border-t border-slate-100 pt-4">
+                        <div>
+                           <p class="text-[10px] text-slate-400 font-bold uppercase">Tổng đơn</p>
+                           <p class="text-xl font-bold text-slate-600" id="statTotalOrders">0</p>
+                        </div>
+                        <div>
+                           <p class="text-[10px] text-slate-400 font-bold uppercase">Trung bình/Đơn</p>
+                           <p class="text-xl font-bold text-slate-600" id="statAvgOrder">0 ₫</p>
+                        </div>
+                   </div>
                 </div>
             </div>
         </div>
@@ -283,16 +300,19 @@
                     <button onclick="exportCustomersToExcel()" class="text-[10px] bg-white/20 px-3 py-1 rounded-lg border border-white/30 hover:bg-white/40"><i class="fa-solid fa-download mr-1"></i> Tải CSV</button>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm min-w-[1000px]">
+                    <table class="w-full text-left text-sm min-w-[1200px]">
                         <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
                             <tr>
                                 <th class="p-4">Tên Khách</th>
                                 <th class="p-4">Số điện thoại</th>
                                 <th class="p-4">Địa chỉ</th>
                                 <th class="p-4">Sinh nhật</th>
+                                <th class="p-4">Ngày kỉ niệm</th>
                                 <th class="p-4">Công việc</th>
+                                <th class="p-4">Tình trạng</th>
                                 <th class="p-4">Ghi chú</th>
                                 <th class="p-4 text-right">Tổng chi</th>
+                                <th class="p-4 text-center">Xóa</th>
                             </tr>
                         </thead>
                         <tbody id="customerTableBody" class="divide-y divide-[#F9C4BA]/30"></tbody>
@@ -328,25 +348,79 @@
     </div>
 
     <script>
-        const STATUS_OPTIONS = ["Đợi gửi", "Đang giao", "HD Sử dụng", "Chăm sóc", "Xử lý", "Đã Hủy"];
-        const STATUS_COLORS = { "Đợi gửi": "bg-slate-100 text-slate-600", "Đang giao": "bg-blue-100 text-blue-700", "HD Sử dụng": "bg-indigo-100 text-indigo-700", "Chăm sóc": "bg-emerald-100 text-emerald-700", "Xử lý": "bg-amber-100 text-amber-700", "Đã Hủy": "bg-red-100 text-red-700" };
-        const OUT_KEYWORDS = ['BND', 'NƯỚC HOA', 'SERUM'];
+        // --- 1. ĐIỀN CẤU HÌNH FIREBASE CỦA BẠN VÀO ĐÂY ---
+        const firebaseConfig = { 
+             apiKey : "AIzaSyBR83SJnuVtaoGKZ6LYKEQkzK4yQtWLOF0" , 
+             authDomain : "ql-sale.firebaseapp.com" , 
+             URL cơ sở dữ liệu : "https://ql-sale-default-rtdb.asia-southeast1.firebasedatabase.app" , 
+             projectId : "ql-sale" , 
+             storageBucket : "ql-sale.firebasestorage.app" , 
+             messagingSenderId : "374149663544" , 
+             appId : "1:374149663544:web:f1fd9b0ad23d9aece44fcd" , 
+              measurementId : "G-G02MNTRZJ6" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-        // KHỞI TẠO DỮ LIỆU
-        let orders = JSON.parse(localStorage.getItem('v11_orders')) || [];
-        let customers = JSON.parse(localStorage.getItem('v11_customers')) || {};
-        // Inventory Structure: { name, price, qty (stock) }
-        let inventory = JSON.parse(localStorage.getItem('v11_inventory')) || [];
-        let revenueChartInstance = null; // Biến lưu biểu đồ
+        // --- 2. NHẬN DIỆN NHÂN VIÊN (KHÔNG ĐỔI GIAO DIỆN) ---
+        let employeeId = localStorage.getItem('v11_employee_id');
+        if (!employeeId) {
+            employeeId = prompt("👋 Chào bạn, vui lòng nhập MÃ NHÂN VIÊN của bạn (Ví dụ: NV01, NV02...).\nMã này giúp đồng bộ dữ liệu của bạn giữa các thiết bị:");
+            if (employeeId && employeeId.trim() !== "") {
+                employeeId = employeeId.trim().toUpperCase();
+                localStorage.setItem('v11_employee_id', employeeId);
+            } else {
+                employeeId = "GUEST_" + Math.floor(Math.random() * 10000);
+            }
+        }
+        
+        // Tạo đường dẫn riêng biệt cho từng nhân viên trên Firebase
+        const userRef = db.ref('SunsetShopData/Employees/' + employeeId);
+
+        // --- 3. LOGIC CHÍNH ĐÃ ĐƯỢC CHUYỂN SANG ĐỒNG BỘ REALTIME ---
+        const STATUS_OPTIONS = ["Đợi gửi", "Đang giao", "Thành công ✅", "Đơn BOM 💣", "HD Sử dụng", "Chăm sóc", "Xử lý", "Đã Hủy"];
+        const STATUS_COLORS = { 
+            "Đợi gửi": "bg-slate-100 text-slate-600", 
+            "Đang giao": "bg-blue-100 text-blue-700", 
+            "Thành công ✅": "bg-green-100 text-green-700",
+            "Đơn BOM 💣": "bg-red-800 text-white",
+            "HD Sử dụng": "bg-indigo-100 text-indigo-700", 
+            "Chăm sóc": "bg-emerald-100 text-emerald-700", 
+            "Xử lý": "bg-amber-100 text-amber-700", 
+            "Đã Hủy": "bg-red-100 text-red-700" 
+        };
+        const OUT_KEYWORDS = ['BND', 'BNĐ', 'NƯỚC HOA', 'SERUM', ];
+
+        let orders = [];
+        let customers = {};
+        let inventory = [];
+        let revenueChartInstance = null;
+
+        // LẮNG NGHE DỮ LIỆU THAY ĐỔI TỪ FIREBASE THEO THỜI GIAN THỰC
+        userRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            orders = data.v11_orders || [];
+            customers = data.v11_customers || {};
+            inventory = data.v11_inventory || [];
+
+            // Tự động render lại các giao diện đang mở khi có dữ liệu mới
+            renderTable();
+            renderCustomerCRM();
+            renderInventory();
+            updateProductDatalist();
+            updateDatalists();
+            if(!document.getElementById('view-analytics').classList.contains('hidden')) {
+                renderAnalytics();
+            }
+        });
 
         const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
-        // --- BACKUP & RESTORE ---
         function backupData() {
             const data = { version: "11.0", timestamp: new Date().toISOString(), orders, customers, inventory };
             const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url; a.download = `SunsetShop_FULL_BACKUP_${new Date().toISOString().slice(0,10)}.json`; a.click();
+            const a = document.createElement("a"); a.href = url; a.download = `SunsetShop_${employeeId}_BACKUP_${new Date().toISOString().slice(0,10)}.json`; a.click();
             showToast("Đã tải xuống file sao lưu!");
         }
 
@@ -359,23 +433,18 @@
                 try {
                     const data = JSON.parse(e.target.result);
                     if (data.orders && data.customers) {
-                        orders = data.orders; customers = data.customers;
-                        if(data.inventory) inventory = data.inventory;
-                        localStorage.setItem('v11_orders', JSON.stringify(orders));
-                        localStorage.setItem('v11_customers', JSON.stringify(customers));
-                        localStorage.setItem('v11_inventory', JSON.stringify(inventory));
-                        alert("Khôi phục thành công! Trang sẽ tải lại."); location.reload();
+                        userRef.child('v11_orders').set(data.orders);
+                        userRef.child('v11_customers').set(data.customers);
+                        if(data.inventory) userRef.child('v11_inventory').set(data.inventory);
+                        alert("Khôi phục thành công! Hệ thống đang tự động đồng bộ."); 
                     } else alert("File lỗi.");
                 } catch (err) { alert("Lỗi đọc file: " + err.message); }
             };
             reader.readAsText(file);
         }
 
-        // --- INVENTORY MANAGEMENT (NEW: Quantity Tracking) ---
         function saveInventory() {
-            localStorage.setItem('v11_inventory', JSON.stringify(inventory));
-            renderInventory();
-            updateProductDatalist();
+            userRef.child('v11_inventory').set(inventory);
         }
 
         function addInventoryProduct() {
@@ -383,10 +452,8 @@
             const price = parseFloat(document.getElementById('invPrice').value);
             const qty = parseInt(document.getElementById('invQty').value) || 0;
             if(!name) return showToast("Nhập tên sản phẩm!");
-            
             const existing = inventory.find(p => p.name.toLowerCase() === name.toLowerCase());
             if(existing) return alert("Sản phẩm đã tồn tại trong kho!");
-
             inventory.push({ name, price: price || 0, qty: qty });
             document.getElementById('invName').value = '';
             document.getElementById('invPrice').value = '';
@@ -409,7 +476,6 @@
         function renderInventory() {
             const tbody = document.getElementById('inventoryTableBody');
             tbody.innerHTML = inventory.map((p, idx) => {
-                // Logic cảnh báo tồn kho
                 const isLow = p.qty <= 5;
                 const stockClass = isLow ? "stock-low" : "stock-ok";
                 return `
@@ -431,7 +497,6 @@
             datalist.innerHTML = inventory.map(p => `<option value="${p.name}">Kho: ${p.qty} | Giá: ${formatMoney(p.price)}</option>`).join('');
         }
 
-        // --- ORDER & STOCK LOGIC ---
         function addProductRow(name = "", price = "", qty = 1) {
             const container = document.getElementById('product-list');
             const div = document.createElement('div');
@@ -453,13 +518,11 @@
 
         function autoFillProductPrice(inputElement) {
             const val = inputElement.value;
-            // Xử lý lấy tên nếu chọn từ datalist có format "Name | stock..."
             const pName = inventory.find(p => p.name === val) ? val : inventory.find(p => inputElement.value.includes(p.name))?.name;
-            
             if(pName) {
                 const product = inventory.find(p => p.name === pName);
                 if (product) {
-                    inputElement.value = product.name; // Reset lại tên sạch
+                    inputElement.value = product.name;
                     const row = inputElement.closest('.product-row');
                     row.querySelector('.p-price').value = product.price;
                     calculateTotal();
@@ -489,9 +552,7 @@
             const addr = document.getElementById('custAddr').value;
             const type = document.getElementById('custType').value;
             const isEdit = document.getElementById('editOrderId').value !== "";
-            
             if(!phone || !name) return alert("Thiếu Tên hoặc SĐT!");
-            
             let products = [];
             let valid = true;
             document.querySelectorAll('.p-name').forEach((el, idx) => {
@@ -500,69 +561,56 @@
                 if(!el.value || !pPrice) valid = false;
                 products.push({ name: el.value, price: parseFloat(pPrice) || 0, qty: pQty });
             });
-            
             if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
-
-            // --- TRỪ TỒN KHO (Chỉ áp dụng khi tạo đơn mới để tránh lỗi logic phức tạp) ---
             if (!isEdit) {
                 products.forEach(p => {
                     const invItem = inventory.find(i => i.name.toLowerCase() === p.name.toLowerCase());
-                    if (invItem) {
-                        invItem.qty = Math.max(0, invItem.qty - p.qty); // Trừ kho
-                    } else {
-                        // Nếu chưa có trong kho, tự thêm vào với số lượng 0 (âm)
-                        inventory.push({ name: p.name, price: p.price, qty: 0 }); // Không trừ âm để tránh khó hiểu, set 0
-                    }
+                    if (invItem) invItem.qty = Math.max(0, invItem.qty - p.qty);
+                    else inventory.push({ name: p.name, price: p.price, qty: 0 });
                 });
                 saveInventory();
-            } else {
-                showToast("Lưu ý: Đang sửa đơn. Kho hàng sẽ KHÔNG tự động trừ/cộng lại.");
             }
-
-            if(!customers[phone]) customers[phone] = { name, address: addr, birthday: '', job: '', note: '' };
-            else { customers[phone].name = name; customers[phone].address = addr; }
+            if(!customers[phone]) {
+                customers[phone] = { 
+                    name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('shipDate').value, status: 'Vãn lai' 
+                };
+            } else { 
+                customers[phone].name = name; customers[phone].address = addr; 
+            }
 
             const { subtotal, total } = calculateTotal();
             const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
             const order = { 
-                id, 
-                timestamp: isEdit ? orders.find(x=>x.id==id).timestamp : Date.now(), 
-                customer: { name, phone, addr, type }, 
-                products, 
+                id, timestamp: isEdit ? orders.find(x=>x.id==id).timestamp : Date.now(), 
+                customer: { name, phone, addr, type }, products, 
                 payMethod: document.getElementById('payMethod').value, 
                 shipFee: parseFloat(document.getElementById('shipFee').value) || 0, 
                 discount: { val: parseFloat(document.getElementById('discountVal').value)||0, type: document.getElementById('discountType').value }, 
-                date: document.getElementById('shipDate').value, 
-                deliveryDate: document.getElementById('deliveryDate').value, 
-                note: document.getElementById('orderNote').value.trim(), 
-                subtotal, total, 
+                date: document.getElementById('shipDate').value, deliveryDate: document.getElementById('deliveryDate').value, 
+                note: document.getElementById('orderNote').value.trim(), subtotal, total, 
                 status: isEdit ? orders.find(x => x.id == id).status : "Đợi gửi" 
             };
             
             if(isEdit) orders[orders.findIndex(o => o.id == id)] = order; else orders.unshift(order);
             
-            localStorage.setItem('v11_orders', JSON.stringify(orders)); 
+            // LƯU LÊN FIREBASE
+            userRef.child('v11_orders').set(orders); 
             saveCRM(); 
-            renderTable(); 
             resetForm(); 
-            updateDatalists();
-            showToast("Đã lưu thành công!");
+            showToast("Đã lưu đồng bộ thành công!");
         }
 
-        // --- RENDER TABLE & SEARCH ---
         function renderTable() {
             const fStart = document.getElementById('listFilterStart').value;
             const fEnd = document.getElementById('listFilterEnd').value;
             const fType = document.getElementById('listFilterType').value;
-            const search = document.getElementById('searchOrderInput').value.toLowerCase(); // Lấy từ khóa tìm kiếm
-
+            const search = document.getElementById('searchOrderInput').value.toLowerCase();
             let filtered = orders.filter(o => {
                 const dateMatch = (!fStart || o.date >= fStart) && (!fEnd || o.date <= fEnd);
                 const typeMatch = (fType === 'all' || o.customer.type === fType);
-                const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search); // Logic tìm kiếm
+                const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search);
                 return dateMatch && typeMatch && searchMatch;
             });
-
             document.getElementById('orderTableBody').innerHTML = filtered.map(o => `
                 <tr class="hover:bg-[#FDF5F4]/50 transition-colors">
                     <td class="p-4">
@@ -590,26 +638,20 @@
                 </tr>`).join('');
         }
 
-        // --- ANALYTICS & CHART ---
         function renderAnalytics() {
             const start = document.getElementById('filterStart').value;
             const end = document.getElementById('filterEnd').value;
-            let filtered = orders.filter(o => o.status !== "Đã Hủy" && (!start || o.date >= start) && (!end || o.date <= end));
+            let validOrders = orders.filter(o => o.status !== "Đã Hủy" && o.status !== "Đơn BOM 💣" && (!start || o.date >= start) && (!end || o.date <= end));
+            let bomOrders = orders.filter(o => o.status === "Đơn BOM 💣" && (!start || o.date >= start) && (!end || o.date <= end));
             
-            let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0;
-            let grandTotal = 0;
-            
-            // Map doanh thu theo ngày cho biểu đồ (7 ngày gần nhất nếu không filter, hoặc theo filter)
+            let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
             let dailyRevenue = {}; 
 
-            filtered.forEach(o => {
+            validOrders.forEach(o => {
                 const net = o.total - o.shipFee;
                 grandTotal += net;
+                if(dailyRevenue[o.date]) dailyRevenue[o.date] += net; else dailyRevenue[o.date] = net;
                 
-                // Cộng dồn theo ngày
-                if(dailyRevenue[o.date]) dailyRevenue[o.date] += net;
-                else dailyRevenue[o.date] = net;
-
                 o.products.forEach(p => {
                     const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
                     if(OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k))) sOut += ratio * net; else sVnl += ratio * net;
@@ -617,66 +659,51 @@
                 if(o.customer.type === 'ttd') sTtd += net; else sNew += net;
             });
 
-            // Update UI Stats
+            let bomTotalValue = bomOrders.reduce((sum, o) => sum + o.total, 0);
+
             document.getElementById('statOut').innerText = formatMoney(sOut);
             document.getElementById('statVnl').innerText = formatMoney(sVnl);
             document.getElementById('statNew').innerText = formatMoney(sNew);
             document.getElementById('statTtd').innerText = formatMoney(sTtd);
-            document.getElementById('totalPeriodRevenue').innerText = formatMoney(sOut + sVnl);
-            document.getElementById('statTotalOrders').innerText = filtered.length;
-            document.getElementById('statAvgOrder').innerText = filtered.length ? formatMoney(grandTotal/filtered.length) : '0 ₫';
+            document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal);
+            document.getElementById('statTotalOrders').innerText = validOrders.length;
+            document.getElementById('statAvgOrder').innerText = validOrders.length ? formatMoney(grandTotal/validOrders.length) : '0 ₫';
+            
+            document.getElementById('statBomCount').innerText = bomOrders.length;
+            document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
 
-            // DRAW CHART
             drawRevenueChart(dailyRevenue);
         }
 
         function drawRevenueChart(dataObj) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
-            
-            // Sort dates
             const sortedDates = Object.keys(dataObj).sort();
-            // Lấy 7 ngày cuối nếu dữ liệu quá nhiều
             const labels = sortedDates.length > 7 ? sortedDates.slice(-7) : sortedDates;
             const dataValues = labels.map(date => dataObj[date]);
-
             if (revenueChartInstance) revenueChartInstance.destroy();
-
             revenueChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels.map(d => d.split('-').reverse().join('/')),
-                    datasets: [{
-                        label: 'Doanh thu ngày',
-                        data: dataValues,
-                        backgroundColor: '#034C5F',
-                        borderRadius: 4,
-                        barThickness: 20
-                    }]
+                    datasets: [{ label: 'Doanh thu', data: dataValues, backgroundColor: '#034C5F', borderRadius: 4, barThickness: 20 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
             });
         }
 
-        // --- HELPER FUNCTIONS ---
         function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.className = "show"; setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000); }
         function copyCustomerInfo(n, p, a) { navigator.clipboard.writeText(`${n}\n${p}\n${a}`).then(() => showToast("Đã copy info!")); }
-        function saveCRM() { localStorage.setItem('v11_customers', JSON.stringify(customers)); }
+        
+        function saveCRM() { userRef.child('v11_customers').set(customers); }
+        
         function autoFillByPhone() { const p = document.getElementById('custPhone').value; if(customers[p]) { document.getElementById('custName').value = customers[p].name; document.getElementById('custAddr').value = customers[p].address; } }
         function autoFillByName() { const n = document.getElementById('custName').value; const p = Object.keys(customers).find(k => customers[k].name === n); if(p) { document.getElementById('custPhone').value = p; document.getElementById('custAddr').value = customers[p].address; } }
         function updateDatalists() { 
             document.getElementById('phoneDataList').innerHTML = Object.keys(customers).map(p => `<option value="${p}">${customers[p].name}</option>`).join('');
             document.getElementById('nameDataList').innerHTML = Object.keys(customers).map(p => `<option value="${customers[p].name}">${p}</option>`).join('');
         }
-        function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; localStorage.setItem('v11_orders', JSON.stringify(orders)); renderTable(); }
-        function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); localStorage.setItem('v11_orders', JSON.stringify(orders)); renderTable(); } }
+        function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; userRef.child('v11_orders').set(orders); }
+        function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); userRef.child('v11_orders').set(orders); } }
         function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
         
         function switchTab(t) {
@@ -692,20 +719,59 @@
         function renderCustomerCRM() {
             const tbody = document.getElementById('customerTableBody');
             const spendings = {}; orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
+            
+            const CUSTOMER_STATUS_STYLES = {
+                "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", 
+                "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", 
+                "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", 
+                "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", 
+                "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", 
+                "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", 
+                "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", 
+                "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", 
+                "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" 
+            };
+
             tbody.innerHTML = Object.keys(customers).map(phone => {
                 const c = customers[phone];
+                const currentStatus = c.status || 'Vãn lai';
+                const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
+
                 return `<tr>
                     <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
                     <td class="p-3">${phone}</td>
                     <td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td>
                     <td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input"></td>
+                    <td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457]"></td>
                     <td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td>
+                    <td class="p-3">
+                        <select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" 
+                                class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}">
+                            <option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option>
+                            <option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option>
+                            <option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option>
+                            <option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option>
+                            <option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option>
+                            <option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option>
+                            <option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option>
+                            <option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option>
+                            <option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option>
+                        </select>
+                    </td>
                     <td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td>
                     <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
+                    <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             }).join('');
         }
+        
         function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
+        
+        function deleteCustomer(p) {
+            if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) {
+                delete customers[p]; saveCRM();
+            }
+        }
 
         function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
         
@@ -760,7 +826,7 @@
                         <div style="display:flex; justify-content:space-between; font-size:12px; color:#EE6457; margin-bottom:10px;"><span>Giảm giá:</span><span>- ${o.discount.val}${o.discount.type==='percent'?'%':'₫'}</span></div>
                         <div style="display:flex; justify-content:space-between; font-weight:900; font-size:28px; color:#034C5F;"><span>TỔNG THU:</span><span>${formatMoney(o.total)}</span></div>
                     </div>
-                    <div style="text-align:center; padding-top:10px; border-top:1px dashed #F9C4BA;">
+                     <div style="text-align:center; padding-top:10px; border-top:1px dashed #F9C4BA;">
                         <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p>
                         <p style="font-size:10px; color:#97BEC6; margin-top:4px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p>
                      </div>
@@ -786,14 +852,20 @@
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal();
         }
         function exportCustomersToExcel() {
-            let csv = "\ufeffTên,SĐT,Địa Chỉ,Tổng Chi\n";
-            Object.keys(customers).forEach(p => { csv += `"${customers[p].name}","${p}","${customers[p].address}","${orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0)}"\n`; });
+            let csv = "\ufeffTên,SĐT,Địa Chỉ,Sinh Nhật,Ngày Kỉ Niệm,Công Việc,Tình Trạng,Ghi Chú,Tổng Chi\n";
+            Object.keys(customers).forEach(p => { 
+                const c = customers[p];
+                const totalSpend = orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0);
+                csv += `"${c.name}","${p}","${c.address || ''}","${c.birthday || ''}","${c.anniversary || ''}","${c.job || ''}","${c.status || ''}","${c.note || ''}","${totalSpend}"\n`; 
+            });
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "KhachHang.csv"; link.click();
         }
         function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
 
-        // INIT
-        document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); addProductRow(); renderTable(); updateDatalists(); renderInventory(); updateProductDatalist();
+        // Khởi tạo giao diện lần đầu
+        document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); addProductRow();
     </script>
 </body>
 </html>
+
+    
