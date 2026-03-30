@@ -292,7 +292,28 @@
             </div>
         </div>
 
-        <div id="view-customers" class="hidden space-y-4">
+        <div id="view-customers" class="hidden space-y-6">
+            <div class="card p-6 bg-white border-t-[6px] border-[#EE6457]">
+                <h3 class="font-bold text-sm uppercase mb-4 text-[#034C5F]"><i class="fa-solid fa-user-plus mr-2"></i>Thêm khách hàng chủ động</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Số điện thoại *</label>
+                        <input type="text" id="newCustPhone" class="form-input !pl-3 mt-1" placeholder="Nhập SĐT...">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Tên khách hàng *</label>
+                        <input type="text" id="newCustName" class="form-input !pl-3 mt-1" placeholder="Nhập tên...">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Địa chỉ</label>
+                        <input type="text" id="newCustAddr" class="form-input !pl-3 mt-1" placeholder="Nhập địa chỉ...">
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="addManualCustomer()" class="px-6 py-2 bg-[#034C5F] text-white rounded-xl font-bold shadow-lg uppercase hover:bg-[#023846] transition-all text-xs"><i class="fa-solid fa-plus mr-2"></i>Thêm Khách Hàng</button>
+                </div>
+            </div>
+
             <div class="card overflow-hidden">
                 <div class="p-4 bg-[#034C5F] text-white flex justify-between items-center">
                     <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng</h3>
@@ -573,7 +594,7 @@
                 });
             }
             
-            // Xử lý thông tin Khách Hàng
+            // Xử lý thông tin Khách Hàng (Tự động cập nhật khách hàng từ Hóa đơn)
             if(!customers[phone]) {
                 customers[phone] = { 
                     name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('shipDate').value, status: 'Vãn lai' 
@@ -606,6 +627,40 @@
             
             resetForm(); 
             showToast("Đã lưu đồng bộ thành công!");
+        }
+
+        // TÍNH NĂNG THÊM KHÁCH HÀNG THỦ CÔNG
+        function addManualCustomer() {
+            const phone = document.getElementById('newCustPhone').value.trim();
+            const name = document.getElementById('newCustName').value.trim();
+            const addr = document.getElementById('newCustAddr').value.trim();
+
+            if (!phone || !name) {
+                return showToast("Vui lòng nhập đầy đủ Tên và Số điện thoại!");
+            }
+
+            if (customers[phone]) {
+                return showToast("Khách hàng với SĐT này đã tồn tại!");
+            }
+
+            customers[phone] = {
+                name: name,
+                address: addr,
+                birthday: '',
+                job: '',
+                note: '',
+                anniversary: '',
+                status: 'Vãn lai'
+            };
+
+            saveCRM();
+            
+            // Xóa rỗng form sau khi thêm
+            document.getElementById('newCustPhone').value = '';
+            document.getElementById('newCustName').value = '';
+            document.getElementById('newCustAddr').value = '';
+
+            showToast("Đã thêm khách hàng mới thành công!");
         }
 
         function renderTable() {
