@@ -105,7 +105,8 @@
                         <button type="button" onclick="addProductRow()" class="w-full py-3 bg-[#FDF5F4] border-2 border-dashed border-[#F9C4BA] rounded-xl text-[#034C5F] text-xs font-bold hover:bg-[#F9C4BA]/30 transition-all"><i class="fa-solid fa-plus-circle mr-1"></i> THÊM MẶT HÀNG</button>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-[#F9C4BA]">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t border-[#F9C4BA]">
+                        <div class="input-group"><label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ngày đặt</label><input type="date" id="orderDate" class="form-input !pl-3 mt-1"></div>
                         <div class="input-group"><label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ngày gửi</label><input type="date" id="shipDate" onchange="autoSetDeliveryDate()" class="form-input !pl-3 mt-1"></div>
                         <div class="input-group"><label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ngày nhận</label><input type="date" id="deliveryDate" class="form-input !pl-3 mt-1"></div>
                         <div>
@@ -318,7 +319,6 @@
                 <div class="p-4 bg-[#034C5F] text-white flex justify-between items-center">
                     <div class="flex items-center gap-4">
                         <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng</h3>
-                        <!-- PHẦN SẮP XẾP CHỦ ĐỘNG MỚI THÊM -->
                         <div class="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-lg border border-white/20">
                             <span class="text-[10px] font-bold text-[#97BEC6] uppercase">Sắp xếp:</span>
                             <select id="customerSortOrder" onchange="renderCustomerCRM()" class="bg-transparent text-xs font-bold focus:outline-none cursor-pointer">
@@ -335,6 +335,7 @@
                     <table class="w-full text-left text-sm min-w-[1200px]">
                         <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
                             <tr>
+                                <th class="p-4 text-center w-12">STT</th>
                                 <th class="p-4">Tên Khách</th>
                                 <th class="p-4">Số điện thoại</th>
                                 <th class="p-4">Địa chỉ</th>
@@ -611,7 +612,7 @@
             if(!customers[phone]) {
                 // TỰ ĐỘNG THÊM TIMESTAMP KHI KHÁCH MỚI PHÁT SINH TỪ ĐƠN HÀNG
                 customers[phone] = { 
-                    name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('shipDate').value, status: 'Vãn lai',
+                    name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai',
                     timestamp: Date.now() 
                 };
             } else { 
@@ -626,7 +627,9 @@
                 payMethod: document.getElementById('payMethod').value, 
                 shipFee: parseFloat(document.getElementById('shipFee').value) || 0, 
                 discount: { val: parseFloat(document.getElementById('discountVal').value)||0, type: document.getElementById('discountType').value }, 
-                date: document.getElementById('shipDate').value, deliveryDate: document.getElementById('deliveryDate').value, 
+                orderDate: document.getElementById('orderDate').value,
+                date: document.getElementById('shipDate').value, 
+                deliveryDate: document.getElementById('deliveryDate').value, 
                 note: document.getElementById('orderNote').value.trim(), subtotal, total, 
                 status: isEdit ? orders.find(x => x.id == id).status : "Đợi gửi" 
             };
@@ -683,7 +686,8 @@
             const fType = document.getElementById('listFilterType').value;
             const search = document.getElementById('searchOrderInput').value.toLowerCase();
             let filtered = orders.filter(o => {
-                const dateMatch = (!fStart || o.date >= fStart) && (!fEnd || o.date <= fEnd);
+                const targetDate = o.orderDate || o.date;
+                const dateMatch = (!fStart || targetDate >= fStart) && (!fEnd || targetDate <= fEnd);
                 const typeMatch = (fType === 'all' || o.customer.type === fType);
                 const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search);
                 return dateMatch && typeMatch && searchMatch;
@@ -718,8 +722,14 @@
         function renderAnalytics() {
             const start = document.getElementById('filterStart').value;
             const end = document.getElementById('filterEnd').value;
-            let validOrders = orders.filter(o => o.status !== "Đã Hủy" && o.status !== "Đơn BOM 💣" && (!start || o.date >= start) && (!end || o.date <= end));
-            let bomOrders = orders.filter(o => o.status === "Đơn BOM 💣" && (!start || o.date >= start) && (!end || o.date <= end));
+            let validOrders = orders.filter(o => {
+                const targetDate = o.orderDate || o.date;
+                return o.status !== "Đã Hủy" && o.status !== "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
+            });
+            let bomOrders = orders.filter(o => {
+                const targetDate = o.orderDate || o.date;
+                return o.status === "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
+            });
             
             let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
             let dailyRevenue = {}; 
@@ -727,7 +737,8 @@
             validOrders.forEach(o => {
                 const net = o.total - o.shipFee;
                 grandTotal += net;
-                if(dailyRevenue[o.date]) dailyRevenue[o.date] += net; else dailyRevenue[o.date] = net;
+                const targetDate = o.orderDate || o.date;
+                if(dailyRevenue[targetDate]) dailyRevenue[targetDate] += net; else dailyRevenue[targetDate] = net;
                 
                 o.products.forEach(p => {
                     const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
@@ -833,7 +844,7 @@
                 return 0;
             });
 
-            tbody.innerHTML = keys.map(phone => {
+            tbody.innerHTML = keys.map((phone, index) => {
                 const c = customers[phone];
                 if(!c) return ""; 
                 
@@ -841,6 +852,7 @@
                 const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
 
                 return `<tr>
+                    <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
                     <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
                     <td class="p-3">${phone}</td>
                     <td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td>
@@ -876,7 +888,17 @@
             }
         }
 
-        function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
+        function resetForm() { 
+            document.getElementById('orderForm').reset(); 
+            document.getElementById('editOrderId').value = ""; 
+            document.getElementById('product-list').innerHTML = ""; 
+            addProductRow(); 
+            document.getElementById('orderDate').valueAsDate = new Date();
+            document.getElementById('shipDate').valueAsDate = new Date(); 
+            autoSetDeliveryDate(); 
+            calculateTotal(); 
+            document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; 
+        }
         
         function editOrder(id) {
             const o = orders.find(x => x.id === id);
@@ -891,6 +913,7 @@
             document.getElementById('shipFee').value = o.shipFee;
             document.getElementById('discountVal').value = o.discount.val;
             document.getElementById('discountType').value = o.discount.type;
+            document.getElementById('orderDate').value = o.orderDate || o.date;
             document.getElementById('shipDate').value = o.date;
             document.getElementById('deliveryDate').value = o.deliveryDate;
             document.getElementById('orderNote').value = o.note || '';
@@ -915,8 +938,8 @@
                             <p style="color:#888; font-size:11px; margin:0; max-width:200px;">${o.customer.addr}</p>
                         </div>
                         <div style="text-align:right; font-size:11px; color:#64748b;">
+                            <p>Ngày đặt: <b>${(o.orderDate || o.date).split('-').reverse().join('/')}</b></p>
                             <p>Ngày gửi: <b>${o.date.split('-').reverse().join('/')}</b></p>
-                            <p>Ngày nhận: <b>${o.deliveryDate.split('-').reverse().join('/')}</b></p>
                             <p style="color:#EE6457; font-weight:800; margin-top:5px; text-transform:uppercase;">${o.payMethod}</p>
                         </div>
                     </div>
@@ -949,9 +972,12 @@
         function confirmExport() {
             const fileName = document.getElementById('exportFileName').value.trim() || `Export_${Date.now()}`;
             const s = document.getElementById('exportStartDate').value; const e = document.getElementById('exportEndDate').value;
-            const data = orders.filter(o => (!s || o.date >= s) && (!e || o.date <= e));
-            let csv = "\ufeffMã Đơn,Ngày,Tên,SĐT,Sản Phẩm,Tổng Tiền\n";
-            data.forEach(o => csv += `${o.id},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`);
+            const data = orders.filter(o => {
+                const targetDate = o.orderDate || o.date;
+                return (!s || targetDate >= s) && (!e || targetDate <= e)
+            });
+            let csv = "\ufeffMã Đơn,Ngày Đặt,Ngày Gửi,Tên,SĐT,Sản Phẩm,Tổng Tiền\n";
+            data.forEach(o => csv += `${o.id},${o.orderDate || o.date},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`);
             const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal();
         }
         function exportCustomersToExcel() {
@@ -965,7 +991,10 @@
         }
         function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
 
-        document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); addProductRow();
+        document.getElementById('orderDate').valueAsDate = new Date();
+        document.getElementById('shipDate').valueAsDate = new Date(); 
+        autoSetDeliveryDate(); 
+        addProductRow();
     </script>
 </body>
 </html>
