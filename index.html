@@ -165,6 +165,7 @@
                             <tr>
                                 <th class="p-4">Khách hàng</th>
                                 <th class="p-4">Sản phẩm</th>
+                                <th class="p-4 text-center">Ngày gửi</th>
                                 <th class="p-4 text-center">Trạng thái</th>
                                 <th class="p-4 text-right">Tổng thu</th>
                                 <th class="p-4 text-center">Thao tác</th>
@@ -271,9 +272,17 @@
 
                 <div class="md:col-span-2">
                     <div class="card overflow-hidden h-full flex flex-col">
-                        <div class="p-4 bg-white border-b border-soft-pink flex justify-between items-center">
+                        <div class="p-4 bg-white border-b border-soft-pink flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <h3 class="font-bold text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-warehouse mr-2"></i>Quản lý kho hàng</h3>
-                            <span class="text-[10px] text-slate-400 italic">Nhập trực tiếp vào ô để sửa</span>
+                            
+                            <div class="flex items-center gap-3">
+                                <select id="inventoryFilter" onchange="renderInventory()" class="text-xs p-1.5 rounded-lg border border-[#F9C4BA] font-bold text-[#034C5F] outline-none focus:border-[#EE6457]">
+                                    <option value="all">Tất cả sản phẩm</option>
+                                    <option value="out">Chỉ SP Ngoài</option>
+                                    <option value="vnl">Chỉ SP VNL</option>
+                                </select>
+                                <span class="text-[10px] text-slate-400 italic hidden md:inline">Nhập trực tiếp vào ô để sửa</span>
+                            </div>
                         </div>
                         <div class="overflow-y-auto max-h-[600px] flex-1">
                             <table class="w-full text-left text-sm">
@@ -510,21 +519,35 @@
 
         function renderInventory() {
             const tbody = document.getElementById('inventoryTableBody');
-            tbody.innerHTML = inventory.map((p, idx) => {
+            const filterElement = document.getElementById('inventoryFilter');
+            const filterMode = filterElement ? filterElement.value : 'all';
+            
+            let html = '';
+            
+            // Dùng forEach thay vì map để giữ nguyên index gốc khi gửi lên hàm update/delete
+            inventory.forEach((p, originalIdx) => {
+                const isOut = OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k));
+                
+                if (filterMode === 'out' && !isOut) return;
+                if (filterMode === 'vnl' && isOut) return;
+
                 const isLow = p.qty <= 5;
                 const stockClass = isLow ? "stock-low" : "stock-ok";
-                return `
+                
+                html += `
                 <tr class="hover:bg-white transition-colors">
-                    <td class="p-3"><input type="text" value="${p.name}" onchange="updateInventoryProduct(${idx}, 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
-                    <td class="p-3"><input type="number" value="${p.price}" onchange="updateInventoryProduct(${idx}, 'price', this.value)" class="crm-input text-[#EE6457]"></td>
+                    <td class="p-3"><input type="text" value="${p.name}" onchange="updateInventoryProduct(${originalIdx}, 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
+                    <td class="p-3"><input type="number" value="${p.price}" onchange="updateInventoryProduct(${originalIdx}, 'price', this.value)" class="crm-input text-[#EE6457]"></td>
                     <td class="p-3 text-center">
-                        <input type="number" value="${p.qty}" onchange="updateInventoryProduct(${idx}, 'qty', this.value)" class="crm-input text-center ${stockClass}" style="font-size:14px;">
+                        <input type="number" value="${p.qty}" onchange="updateInventoryProduct(${originalIdx}, 'qty', this.value)" class="crm-input text-center ${stockClass}" style="font-size:14px;">
                     </td>
                     <td class="p-3 text-right">
-                        <button onclick="deleteInventoryProduct(${idx})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="deleteInventoryProduct(${originalIdx})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
-            }).join('');
+            });
+            
+            tbody.innerHTML = html;
         }
 
         function updateProductDatalist() {
@@ -692,7 +715,11 @@
                 const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search);
                 return dateMatch && typeMatch && searchMatch;
             });
-            document.getElementById('orderTableBody').innerHTML = filtered.map(o => `
+            document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
+                // FORMAT NGÀY GỬI
+                const formattedShipDate = o.date ? o.date.split('-').reverse().join('/') : '';
+                
+                return `
                 <tr class="hover:bg-[#FDF5F4]/50 transition-colors">
                     <td class="p-4">
                         <div class="flex items-start gap-2">
@@ -707,6 +734,11 @@
                         </div>
                     </td>
                     <td class="p-4 text-xs text-slate-500 line-clamp-1">${o.products.map(p => `${p.name} (x${p.qty})`).join(', ')}</td>
+                    <td class="p-4 text-center">
+                        <span class="bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap">
+                            <i class="fa-solid fa-truck-fast mr-1"></i>${formattedShipDate}
+                        </span>
+                    </td>
                     <td class="p-4 text-center"><button onclick="updateStatus(${o.id})" class="status-badge ${STATUS_COLORS[o.status]}">${o.status}</button></td>
                     <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
                     <td class="p-4 text-center">
@@ -716,7 +748,8 @@
                             <button onclick="deleteOrder(${o.id})" class="text-slate-200 hover:text-red-400"><i class="fa-solid fa-trash text-lg"></i></button>
                         </div>
                     </td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
         }
 
         function renderAnalytics() {
