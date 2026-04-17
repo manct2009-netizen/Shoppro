@@ -37,6 +37,36 @@
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* Animation & Styling cho Sinh nhật / Kỷ niệm */
+        @keyframes pulse-pink {
+            0% { box-shadow: 0 0 0 0 rgba(219, 39, 119, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(219, 39, 119, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(219, 39, 119, 0); }
+        }
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        .birthday-today {
+            background-color: #db2777 !important;
+            color: white !important;
+            animation: pulse-pink 2s infinite;
+            font-weight: 900 !important;
+            border-color: #be185d !important;
+            border-radius: 8px;
+        }
+        .anniversary-today {
+            background-color: #2563eb !important;
+            color: white !important;
+            animation: pulse-blue 2s infinite;
+            font-weight: 900 !important;
+            border-color: #1d4ed8 !important;
+            border-radius: 8px;
+        }
+        .bg-light-pink { background-color: #fce7f3 !important; color: #db2777; font-weight: 700; border-radius: 8px; }
+        .bg-light-blue { background-color: #dbeafe !important; color: #2563eb; font-weight: 700; border-radius: 8px; }
     </style>
 </head>
 <body class="pb-24">
@@ -268,7 +298,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Giá niêm yết</label>
-                                    <input type="number" id="invPrice" class="form-input mt-1 text-black" placeholder="0">
+                                    <input type="text" inputmode="numeric" id="invPrice" oninput="formatCurrencyInput(this)" class="form-input mt-1 text-black" placeholder="0 ₫">
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Số lượng ban đầu</label>
@@ -299,7 +329,7 @@
                                 <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase sticky top-0 z-10 shadow-sm">
                                     <tr>
                                         <th class="p-3">Tên sản phẩm</th>
-                                        <th class="p-3 w-24">Giá bán</th>
+                                        <th class="p-3 w-32">Giá bán</th>
                                         <th class="p-3 w-20 text-center">Tồn kho</th>
                                         <th class="p-3 text-right">Thao tác</th>
                                     </tr>
@@ -384,7 +414,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                         <div>
                             <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Số tiền tích (đ)</label>
-                            <input type="text" id="cvAccAmount" class="form-input !pl-3 mt-1" placeholder="Ví dụ: 1,500,000" oninput="formatCurrencyInput(this)">
+                            <input type="text" inputmode="numeric" id="cvAccAmount" class="form-input !pl-3 mt-1" placeholder="Ví dụ: 1,500,000" oninput="formatCurrencyInput(this)">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ngày tích</label>
@@ -443,11 +473,11 @@
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-[#97BEC6] uppercase">CV</label>
-                            <input type="text" id="cvMonthCV" class="form-input !pl-3 mt-1" placeholder="Nhập CV..." oninput="formatCurrencyInput(this)">
+                            <input type="text" inputmode="numeric" id="cvMonthCV" class="form-input !pl-3 mt-1" placeholder="Nhập CV..." oninput="formatCurrencyInput(this)">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Tổng tiền đơn nhập</label>
-                            <input type="text" id="cvMonthImport" class="form-input !pl-3 mt-1 text-[#EE6457] font-bold" placeholder="Nhập tiền..." oninput="formatCurrencyInput(this)">
+                            <input type="text" inputmode="numeric" id="cvMonthImport" class="form-input !pl-3 mt-1 text-[#EE6457] font-bold" placeholder="Nhập tiền..." oninput="formatCurrencyInput(this)">
                         </div>
                         <div>
                             <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ghi chú</label>
@@ -739,6 +769,7 @@
 
         const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
         
+        // Hỗ trợ phân cách hàng nghìn cho giá tiền (1,500,000)
         function formatCurrencyInput(input) {
             let value = input.value.replace(/\D/g, ""); 
             if (value !== "") {
@@ -748,7 +779,8 @@
             }
         }
         function parseCurrency(str) {
-            return parseFloat(str.replace(/,/g, "")) || 0;
+            if (!str) return 0;
+            return parseInt(String(str).replace(/\D/g, ""), 10) || 0;
         }
 
         function backupData() {
@@ -783,7 +815,7 @@
         function saveInventory() { userRef.child('v11_inventory').set(inventory); }
         function addInventoryProduct() {
             const name = document.getElementById('invName').value.trim();
-            const price = parseFloat(document.getElementById('invPrice').value);
+            const price = parseCurrency(document.getElementById('invPrice').value);
             const qty = parseInt(document.getElementById('invQty').value) || 0;
             if(!name) return showToast("Nhập tên sản phẩm!");
             const existing = inventory.find(p => p.name.toLowerCase() === name.toLowerCase());
@@ -797,7 +829,7 @@
         }
         function updateInventoryProduct(index, field, value) {
             if(field === 'qty') inventory[index].qty = parseInt(value) || 0;
-            else if(field === 'price') inventory[index].price = parseFloat(value) || 0;
+            else if(field === 'price') inventory[index].price = parseCurrency(value) || 0;
             else inventory[index][field] = value;
             saveInventory();
         }
@@ -816,7 +848,7 @@
                 html += `
                 <tr class="hover:bg-white transition-colors">
                     <td class="p-3"><input type="text" value="${p.name}" onchange="updateInventoryProduct(${originalIdx}, 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
-                    <td class="p-3"><input type="number" value="${p.price}" onchange="updateInventoryProduct(${originalIdx}, 'price', this.value)" class="crm-input text-[#EE6457]"></td>
+                    <td class="p-3"><input type="text" inputmode="numeric" value="${new Intl.NumberFormat('en-US').format(p.price)}" oninput="formatCurrencyInput(this)" onchange="updateInventoryProduct(${originalIdx}, 'price', this.value)" class="crm-input text-[#EE6457]"></td>
                     <td class="p-3 text-center">
                         <input type="number" value="${p.qty}" onchange="updateInventoryProduct(${originalIdx}, 'qty', this.value)" class="crm-input text-center ${stockClass}" style="font-size:14px;">
                     </td>
@@ -835,6 +867,7 @@
         function addProductRow(name = "", price = "", qty = 1) {
             const container = document.getElementById('product-list');
             const div = document.createElement('div');
+            const formattedPrice = price ? new Intl.NumberFormat('en-US').format(price) : "";
             div.className = "grid grid-cols-1 sm:grid-cols-[2fr,1fr,0.5fr,auto] gap-2 bg-white p-3 border border-soft-pink rounded-xl items-center shadow-sm product-row";
             div.innerHTML = `
                 <div class="input-group">
@@ -843,7 +876,7 @@
                 </div>
                 <div class="input-group">
                     <i class="fa-solid fa-money-bill-1-wave input-icon"></i>
-                    <input type="number" class="form-input p-price font-bold text-[#034C5F]" placeholder="Giá" value="${price}" oninput="calculateTotal()">
+                    <input type="text" inputmode="numeric" class="form-input p-price font-bold text-[#034C5F]" placeholder="Giá (₫)" value="${formattedPrice}" oninput="formatCurrencyInput(this); calculateTotal()">
                 </div>
                 <input type="number" class="form-input !pl-3 p-qty text-center" value="${qty}" oninput="calculateTotal()">
                 <button type="button" onclick="this.parentElement.remove(); calculateTotal()" class="text-[#F9C4BA] hover:text-[#EE6457] p-2 transition-colors"><i class="fa-solid fa-trash-can text-lg"></i></button>`;
@@ -858,7 +891,7 @@
                 if (product) {
                     inputElement.value = product.name;
                     const row = inputElement.closest('.product-row');
-                    row.querySelector('.p-price').value = product.price;
+                    row.querySelector('.p-price').value = new Intl.NumberFormat('en-US').format(product.price);
                     calculateTotal();
                 }
             }
@@ -866,7 +899,7 @@
         function calculateTotal() {
             let subtotal = 0;
             document.querySelectorAll('.p-name').forEach((el, idx) => {
-                const price = parseFloat(document.querySelectorAll('.p-price')[idx].value) || 0;
+                const price = parseCurrency(document.querySelectorAll('.p-price')[idx].value) || 0;
                 const qty = parseFloat(document.querySelectorAll('.p-qty')[idx].value) || 0;
                 subtotal += price * qty;
             });
@@ -892,7 +925,7 @@
                 const pPrice = document.querySelectorAll('.p-price')[idx].value;
                 const pQty = parseInt(document.querySelectorAll('.p-qty')[idx].value) || 1;
                 if(!el.value || !pPrice) valid = false;
-                products.push({ name: el.value, price: parseFloat(pPrice) || 0, qty: pQty });
+                products.push({ name: el.value, price: parseCurrency(pPrice) || 0, qty: pQty });
             });
             if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
             if (!isEdit) {
@@ -1070,19 +1103,58 @@
                 else if (sortMode === 'name') return customers[a].name.localeCompare(customers[b].name);
                 else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); return 0;
             });
+            
+            const today = new Date();
+            const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+            const todayDate = String(today.getDate()).padStart(2, '0');
+            const todayMMDD = `${todayMonth}-${todayDate}`;
+
             tbody.innerHTML = keys.map((phone, index) => {
                 const c = customers[phone]; if(!c) return ""; 
                 const currentStatus = c.status || 'Vãn lai'; const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
                 
-                return `<tr><td class="p-3 text-center font-bold text-slate-400">${index + 1}</td><td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td><td class="p-3">${phone}</td><td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer hover:bg-white/50 flatpickr-date"></td><td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457] cursor-pointer hover:bg-white/50 flatpickr-date"></td><td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td><td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td><td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td><td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td><td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                let bdayMMDD = c.birthday ? c.birthday.substring(5) : "";
+                let isBdayToday = (bdayMMDD === todayMMDD);
+                let bdayClass = isBdayToday ? "birthday-today" : "bg-light-pink";
+
+                let anniMMDD = c.anniversary ? c.anniversary.substring(5) : "";
+                let isAnniToday = (anniMMDD === todayMMDD);
+                let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
+                
+                return `<tr>
+                    <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
+                    <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
+                    <td class="p-3">${phone}</td>
+                    <td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td>
+                    <td class="p-3"><input type="text" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer flatpickr-date ${bdayClass}" placeholder="DD/MM/YYYY"></td>
+                    <td class="p-3"><input type="text" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input cursor-pointer flatpickr-date text-[#EE6457] ${anniClass}" placeholder="DD/MM/YYYY"></td>
+                    <td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td>
+                    <td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td>
+                    <td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td>
+                    <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
+                    <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;
             }).join('');
 
             if (typeof flatpickr !== "undefined") {
                 flatpickr(".flatpickr-date", {
                     dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d/m/Y",
                     disableMobile: true,
                     allowInput: true,
                     locale: "vn",
+                    onReady: function(selectedDates, dateStr, instance) {
+                        if (instance.altInput && instance.element) {
+                            const classesToCopy = ['birthday-today', 'bg-light-pink', 'anniversary-today', 'bg-light-blue', 'text-[#EE6457]'];
+                            classesToCopy.forEach(cls => {
+                                if (instance.element.classList.contains(cls)) {
+                                    instance.altInput.classList.add(cls);
+                                }
+                            });
+                            instance.altInput.classList.add('crm-input', 'text-center');
+                        }
+                    },
                     onChange: function(selectedDates, dateStr, instance) {
                         instance.element.dispatchEvent(new Event('change'));
                     }
