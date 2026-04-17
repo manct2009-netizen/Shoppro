@@ -46,11 +46,12 @@
                 <h1 class="font-extrabold text-[#034C5F] tracking-tight text-xl uppercase hidden md:block">Sunset<span class="text-[#EE6457] font-light">Shop V11</span></h1>
             </div>
             
-            <nav class="flex bg-[#FDF5F4] p-1 rounded-2xl border border-[#F9C4BA]">
+            <nav class="flex bg-[#FDF5F4] p-1 rounded-2xl border border-[#F9C4BA] overflow-x-auto whitespace-nowrap hide-scrollbar max-w-[60vw] md:max-w-none">
                 <button onclick="switchTab('orders')" id="tab-orders" class="px-3 md:px-4 py-2 rounded-xl text-sm font-bold transition-all bg-white text-[#034C5F] shadow-sm"><i class="fa-solid fa-cart-shopping md:mr-1"></i><span class="hidden md:inline"> Đơn</span></button>
                 <button onclick="switchTab('analytics')" id="tab-analytics" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-chart-pie md:mr-1"></i><span class="hidden md:inline"> Báo cáo</span></button>
                 <button onclick="switchTab('inventory')" id="tab-inventory" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-warehouse md:mr-1"></i><span class="hidden md:inline"> Kho</span></button>
                 <button onclick="switchTab('customers')" id="tab-customers" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-users md:mr-1"></i><span class="hidden md:inline"> Khách</span></button>
+                <button onclick="switchTab('cv')" id="tab-cv" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-star md:mr-1"></i><span class="hidden md:inline"> Thống kê CV</span></button>
             </nav>
 
             <div class="flex gap-2">
@@ -64,6 +65,11 @@
             </div>
         </div>
     </header>
+
+    <style>
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 
     <main class="container mx-auto p-4 lg:max-w-7xl">
         <div id="view-orders" class="space-y-6">
@@ -246,7 +252,7 @@
         </div>
 
         <div id="view-inventory" class="hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-1">
                     <div class="card p-6 bg-[#034C5F] text-white">
                         <h3 class="font-bold text-sm uppercase mb-4"><i class="fa-solid fa-plus-circle mr-2"></i>Thêm sản phẩm mới</h3>
@@ -303,7 +309,7 @@
         </div>
 
         <div id="view-customers" class="hidden space-y-6">
-            <div class="card p-6 bg-white border-t-[6px] border-[#EE6457]">
+             <div class="card p-6 bg-white border-t-[6px] border-[#EE6457]">
                 <h3 class="font-bold text-sm uppercase mb-4 text-[#034C5F]"><i class="fa-solid fa-user-plus mr-2"></i>Thêm khách hàng chủ động</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
@@ -362,6 +368,144 @@
                 </div>
             </div>
         </div>
+
+        <div id="view-cv" class="hidden space-y-6">
+            
+            <section class="card overflow-hidden">
+                <div class="p-4 bg-[#034C5F] text-white border-b border-soft-pink flex flex-col md:flex-row justify-between md:items-center gap-3">
+                    <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-list-check mr-2"></i>Danh sách tích lũy (Tự nhập)</h3>
+                </div>
+                <div class="p-4 bg-white border-b border-[#F9C4BA]/30">
+                    <input type="hidden" id="editCvAccId" value="">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Số tiền tích (đ)</label>
+                            <input type="text" id="cvAccAmount" class="form-input !pl-3 mt-1" placeholder="Ví dụ: 1,500,000" oninput="formatCurrencyInput(this)">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ngày tích</label>
+                            <input type="date" id="cvAccDate" class="form-input !pl-3 mt-1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Hình thức</label>
+                            <select id="cvAccMethod" class="form-input !pl-3 mt-1 font-bold text-[#034C5F]">
+                                <option value="CK">CK</option>
+                                <option value="TM">TM</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ghi chú</label>
+                            <input type="text" id="cvAccNote" class="form-input !pl-3 mt-1" placeholder="Ghi chú...">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="btnSaveCVAcc" onclick="addCVAccumulation()" class="w-full py-[10px] bg-[#EE6457] text-white rounded-xl font-bold shadow-lg uppercase hover:bg-[#d85449] transition-all text-xs">THÊM</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-3 bg-[#FDF5F4] border-b border-[#F9C4BA]/30 flex gap-3 items-center">
+                    <label class="text-[10px] font-bold text-[#97BEC6] uppercase"><i class="fa-solid fa-filter mr-1"></i> Lọc hiển thị theo tháng:</label>
+                    <input type="month" id="cvAccFilterMonth" onchange="renderCVAccumulations()" class="form-input !pl-3 !py-1 w-auto text-xs font-bold text-[#034C5F]">
+                    <button onclick="document.getElementById('cvAccFilterMonth').value=''; renderCVAccumulations()" class="text-[10px] font-bold text-[#EE6457] hover:text-red-700 ml-2">XÓA LỌC</button>
+                </div>
+
+                <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase sticky top-0 z-10 shadow-sm">
+                            <tr>
+                                <th class="p-4">Ngày tích</th>
+                                <th class="p-4 text-right">Số tiền tích</th>
+                                <th class="p-4 text-center">Hình thức</th>
+                                <th class="p-4">Ghi chú</th>
+                                <th class="p-4 text-center">Đánh dấu</th>
+                                <th class="p-4 text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cvAccTableBody" class="divide-y divide-[#F9C4BA]/30 bg-white"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card overflow-hidden">
+                <div class="p-4 bg-white border-b border-soft-pink border-t-[6px] border-[#034C5F]">
+                    <h3 class="font-bold text-[#034C5F] text-sm uppercase mb-4"><i class="fa-solid fa-calendar-check mr-2"></i>Thống kê CV theo tháng</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 bg-[#FDF5F4] p-4 rounded-xl border border-[#F9C4BA]">
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Chọn Tháng lưu</label>
+                            <input type="month" id="cvMonthPick" class="form-input !pl-3 mt-1 text-[#034C5F] font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">CV</label>
+                            <input type="text" id="cvMonthCV" class="form-input !pl-3 mt-1" placeholder="Nhập CV..." oninput="formatCurrencyInput(this)">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Tổng tiền đơn nhập</label>
+                            <input type="text" id="cvMonthImport" class="form-input !pl-3 mt-1 text-[#EE6457] font-bold" placeholder="Nhập tiền..." oninput="formatCurrencyInput(this)">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Ghi chú</label>
+                            <input type="text" id="cvMonthNote" class="form-input !pl-3 mt-1" placeholder="...">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="btnSaveCVMonth" onclick="saveCVMonthlyStat()" class="w-full py-[10px] bg-[#034C5F] text-white rounded-xl font-bold shadow-lg uppercase hover:bg-black transition-all text-xs">LƯU THÁNG</button>
+                        </div>
+                        <div class="md:col-span-5 text-[10px] text-slate-500 italic mt-1">* "Tổng số tiền tích" và "Còn Lại Chưa Nâng" sẽ được tự động tính toán dựa trên ngày tích của danh sách trên.</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
+                            <tr>
+                                <th class="p-4 text-center">Tháng</th>
+                                <th class="p-4 text-right">Tổng tiền tích (Tự động)</th>
+                                <th class="p-4 text-right">CV</th>
+                                <th class="p-4 text-right">Tổng tiền nhập</th>
+                                <th class="p-4 text-right">Còn Lại Chưa Nâng</th>
+                                <th class="p-4 text-right">Thao tác / Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cvMonthTableBody" class="divide-y divide-[#F9C4BA]/30 bg-white"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card p-6 bg-white border-2 border-[#F9C4BA]">
+                <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
+                    <h3 class="font-bold text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-chart-line mr-2"></i>Bảng thống kê theo thời gian</h3>
+                    <div class="flex gap-2">
+                        <select id="cvSumMonth" onchange="renderCVSummary()" class="form-input !pl-3 py-2 w-auto font-bold text-[#034C5F]">
+                            <option value="all">Tất cả các tháng</option>
+                            <option value="01">Tháng 1</option><option value="02">Tháng 2</option><option value="03">Tháng 3</option>
+                            <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
+                            <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
+                            <option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                        </select>
+                        <select id="cvSumYear" onchange="renderCVSummary()" class="form-input !pl-3 py-2 w-auto font-bold text-[#034C5F]">
+                            </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-[#FDF5F4] p-4 rounded-2xl border border-[#F9C4BA] text-center shadow-inner">
+                        <p class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1">Tổng CV</p>
+                        <h4 class="text-xl font-black text-[#034C5F]" id="sumCV">0</h4>
+                    </div>
+                    <div class="bg-[#FDF5F4] p-4 rounded-2xl border border-[#F9C4BA] text-center shadow-inner">
+                        <p class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1">Tổng Tiền Tích Lũy</p>
+                        <h4 class="text-xl font-black text-[#034C5F]" id="sumAcc">0 ₫</h4>
+                    </div>
+                    <div class="bg-[#FDF5F4] p-4 rounded-2xl border border-[#F9C4BA] text-center shadow-inner">
+                        <p class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1">Tổng Tiền Đơn Nhập</p>
+                        <h4 class="text-xl font-black text-[#EE6457]" id="sumImport">0 ₫</h4>
+                    </div>
+                    <div class="bg-[#034C5F] p-4 rounded-2xl text-center shadow-lg">
+                        <p class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1">Còn Lại Chưa Nâng</p>
+                        <h4 class="text-xl font-black text-white" id="sumRemain">0 ₫</h4>
+                    </div>
+                </div>
+            </section>
+        </div>
+
     </main>
 
     <div id="invoiceModal" class="fixed inset-0 bg-[#034C5F]/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto">
@@ -434,6 +578,10 @@
         let inventory = [];
         let revenueChartInstance = null;
 
+        // DỮ LIỆU CV
+        let cvAccumulations = [];
+        let cvMonthlyStats = {};
+
         userRef.on('value', (snapshot) => {
             const data = snapshot.val() || {};
             orders = data.v11_orders || [];
@@ -447,21 +595,42 @@
             }
 
             inventory = data.v11_inventory || [];
+            
+            // LOAD DATA CV
+            cvAccumulations = data.v11_cv_accumulations || [];
+            cvMonthlyStats = data.v11_cv_monthly || {};
 
             renderTable();
             renderCustomerCRM();
             renderInventory();
             updateProductDatalist();
             updateDatalists();
+            
             if(!document.getElementById('view-analytics').classList.contains('hidden')) {
                 renderAnalytics();
+            }
+            if(!document.getElementById('view-cv').classList.contains('hidden')) {
+                renderAllCV();
             }
         });
 
         const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+        
+        // HÀM FORMAT SỐ CÓ DẤU PHẨY (,) NHƯ YÊU CẦU
+        function formatCurrencyInput(input) {
+            let value = input.value.replace(/\D/g, ""); // Chỉ lấy số
+            if (value !== "") {
+                input.value = new Intl.NumberFormat('en-US').format(value);
+            } else {
+                input.value = "";
+            }
+        }
+        function parseCurrency(str) {
+            return parseFloat(str.replace(/,/g, "")) || 0;
+        }
 
         function backupData() {
-            const data = { version: "11.0", timestamp: new Date().toISOString(), orders, customers, inventory };
+            const data = { version: "11.0", timestamp: new Date().toISOString(), orders, customers, inventory, cvAccumulations, cvMonthlyStats };
             const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a"); a.href = url; a.download = `SunsetShop_${employeeId}_BACKUP_${new Date().toISOString().slice(0,10)}.json`; a.click();
@@ -480,6 +649,8 @@
                         userRef.child('v11_orders').set(data.orders);
                         userRef.child('v11_customers').set(data.customers);
                         if(data.inventory) userRef.child('v11_inventory').set(data.inventory);
+                        if(data.cvAccumulations) userRef.child('v11_cv_accumulations').set(data.cvAccumulations);
+                        if(data.cvMonthlyStats) userRef.child('v11_cv_monthly').set(data.cvMonthlyStats);
                         alert("Khôi phục thành công! Hệ thống đang tự động đồng bộ."); 
                     } else alert("File lỗi.");
                 } catch (err) { alert("Lỗi đọc file: " + err.message); }
@@ -487,10 +658,8 @@
             reader.readAsText(file);
         }
 
-        function saveInventory() {
-            userRef.child('v11_inventory').set(inventory);
-        }
-
+        // --- CÁC HÀM CŨ GIỮ NGUYÊN KHÔNG ĐỔI ---
+        function saveInventory() { userRef.child('v11_inventory').set(inventory); }
         function addInventoryProduct() {
             const name = document.getElementById('invName').value.trim();
             const price = parseFloat(document.getElementById('invPrice').value);
@@ -505,35 +674,24 @@
             saveInventory();
             showToast("Đã nhập kho!");
         }
-
         function updateInventoryProduct(index, field, value) {
             if(field === 'qty') inventory[index].qty = parseInt(value) || 0;
             else if(field === 'price') inventory[index].price = parseFloat(value) || 0;
             else inventory[index][field] = value;
             saveInventory();
         }
-
-        function deleteInventoryProduct(index) {
-            if(confirm("Xóa sản phẩm này khỏi kho?")) { inventory.splice(index, 1); saveInventory(); }
-        }
-
+        function deleteInventoryProduct(index) { if(confirm("Xóa sản phẩm này khỏi kho?")) { inventory.splice(index, 1); saveInventory(); } }
         function renderInventory() {
             const tbody = document.getElementById('inventoryTableBody');
             const filterElement = document.getElementById('inventoryFilter');
             const filterMode = filterElement ? filterElement.value : 'all';
-            
             let html = '';
-            
-            // Dùng forEach thay vì map để giữ nguyên index gốc khi gửi lên hàm update/delete
             inventory.forEach((p, originalIdx) => {
                 const isOut = OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k));
-                
                 if (filterMode === 'out' && !isOut) return;
                 if (filterMode === 'vnl' && isOut) return;
-
                 const isLow = p.qty <= 5;
                 const stockClass = isLow ? "stock-low" : "stock-ok";
-                
                 html += `
                 <tr class="hover:bg-white transition-colors">
                     <td class="p-3"><input type="text" value="${p.name}" onchange="updateInventoryProduct(${originalIdx}, 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
@@ -546,7 +704,6 @@
                     </td>
                 </tr>`;
             });
-            
             tbody.innerHTML = html;
         }
 
@@ -554,7 +711,6 @@
             const datalist = document.getElementById('productDataList');
             datalist.innerHTML = inventory.map(p => `<option value="${p.name}">Kho: ${p.qty} | Giá: ${formatMoney(p.price)}</option>`).join('');
         }
-
         function addProductRow(name = "", price = "", qty = 1) {
             const container = document.getElementById('product-list');
             const div = document.createElement('div');
@@ -573,7 +729,6 @@
             container.appendChild(div);
             calculateTotal();
         }
-
         function autoFillProductPrice(inputElement) {
             const val = inputElement.value;
             const pName = inventory.find(p => p.name === val) ? val : inventory.find(p => inputElement.value.includes(p.name))?.name;
@@ -587,7 +742,6 @@
                 }
             }
         }
-
         function calculateTotal() {
             let subtotal = 0;
             document.querySelectorAll('.p-name').forEach((el, idx) => {
@@ -603,16 +757,13 @@
             document.getElementById('finalTotal').innerText = formatMoney(total);
             return { subtotal, total };
         }
-
         function saveOrder() {
             const phone = document.getElementById('custPhone').value.trim();
             const name = document.getElementById('custName').value.trim();
             const addr = document.getElementById('custAddr').value;
             const type = document.getElementById('custType').value;
             const isEdit = document.getElementById('editOrderId').value !== "";
-            
             if(!phone || !name) return alert("Thiếu Tên hoặc SĐT!");
-            
             let products = [];
             let valid = true;
             document.querySelectorAll('.p-name').forEach((el, idx) => {
@@ -621,9 +772,7 @@
                 if(!el.value || !pPrice) valid = false;
                 products.push({ name: el.value, price: parseFloat(pPrice) || 0, qty: pQty });
             });
-            
             if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
-            
             if (!isEdit) {
                 products.forEach(p => {
                     const invItem = inventory.find(i => i.name.toLowerCase() === p.name.toLowerCase());
@@ -631,17 +780,11 @@
                     else inventory.push({ name: p.name, price: p.price, qty: 0 });
                 });
             }
-            
             if(!customers[phone]) {
-                // TỰ ĐỘNG THÊM TIMESTAMP KHI KHÁCH MỚI PHÁT SINH TỪ ĐƠN HÀNG
-                customers[phone] = { 
-                    name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai',
-                    timestamp: Date.now() 
-                };
+                customers[phone] = { name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai', timestamp: Date.now() };
             } else { 
                 customers[phone].name = name; customers[phone].address = addr; 
             }
-
             const { subtotal, total } = calculateTotal();
             const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
             const order = { 
@@ -656,53 +799,21 @@
                 note: document.getElementById('orderNote').value.trim(), subtotal, total, 
                 status: isEdit ? orders.find(x => x.id == id).status : "Đợi gửi" 
             };
-            
             if(isEdit) orders[orders.findIndex(o => o.id == id)] = order; else orders.unshift(order);
-            
-            userRef.update({
-                'v11_orders': orders,
-                'v11_customers': customers,
-                'v11_inventory': inventory
-            });
-            
-            resetForm(); 
-            showToast("Đã lưu đồng bộ thành công!");
+            userRef.update({ 'v11_orders': orders, 'v11_customers': customers, 'v11_inventory': inventory });
+            resetForm(); showToast("Đã lưu đồng bộ thành công!");
         }
-
         function addManualCustomer() {
             const phone = document.getElementById('newCustPhone').value.trim();
             const name = document.getElementById('newCustName').value.trim();
             const addr = document.getElementById('newCustAddr').value.trim();
-
-            if (!phone || !name) {
-                return showToast("Vui lòng nhập đầy đủ Tên và Số điện thoại!");
-            }
-
-            if (customers[phone]) {
-                return showToast("Khách hàng với SĐT này đã tồn tại!");
-            }
-
-            // TỰ ĐỘNG THÊM TIMESTAMP KHI THÊM CHỦ ĐỘNG
-            customers[phone] = {
-                name: name,
-                address: addr,
-                birthday: '',
-                job: '',
-                note: '',
-                anniversary: '',
-                status: 'Vãn lai',
-                timestamp: Date.now()
-            };
-
+            if (!phone || !name) return showToast("Vui lòng nhập đầy đủ Tên và Số điện thoại!");
+            if (customers[phone]) return showToast("Khách hàng với SĐT này đã tồn tại!");
+            customers[phone] = { name: name, address: addr, birthday: '', job: '', note: '', anniversary: '', status: 'Vãn lai', timestamp: Date.now() };
             saveCRM();
-            
-            document.getElementById('newCustPhone').value = '';
-            document.getElementById('newCustName').value = '';
-            document.getElementById('newCustAddr').value = '';
-
+            document.getElementById('newCustPhone').value = ''; document.getElementById('newCustName').value = ''; document.getElementById('newCustAddr').value = '';
             showToast("Đã thêm khách hàng mới thành công!");
         }
-
         function renderTable() {
             const fStart = document.getElementById('listFilterStart').value;
             const fEnd = document.getElementById('listFilterEnd').value;
@@ -716,9 +827,7 @@
                 return dateMatch && typeMatch && searchMatch;
             });
             document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
-                // FORMAT NGÀY GỬI
                 const formattedShipDate = o.date ? o.date.split('-').reverse().join('/') : '';
-                
                 return `
                 <tr class="hover:bg-[#FDF5F4]/50 transition-colors">
                     <td class="p-4">
@@ -751,7 +860,6 @@
                 </tr>`;
             }).join('');
         }
-
         function renderAnalytics() {
             const start = document.getElementById('filterStart').value;
             const end = document.getElementById('filterEnd').value;
@@ -763,269 +871,353 @@
                 const targetDate = o.orderDate || o.date;
                 return o.status === "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
             });
-            
             let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
             let dailyRevenue = {}; 
-
             validOrders.forEach(o => {
                 const net = o.total - o.shipFee;
                 grandTotal += net;
                 const targetDate = o.orderDate || o.date;
                 if(dailyRevenue[targetDate]) dailyRevenue[targetDate] += net; else dailyRevenue[targetDate] = net;
-                
                 o.products.forEach(p => {
                     const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
                     if(OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k))) sOut += ratio * net; else sVnl += ratio * net;
                 });
                 if(o.customer.type === 'ttd') sTtd += net; else sNew += net;
             });
-
             let bomTotalValue = bomOrders.reduce((sum, o) => sum + o.total, 0);
-
-            document.getElementById('statOut').innerText = formatMoney(sOut);
-            document.getElementById('statVnl').innerText = formatMoney(sVnl);
-            document.getElementById('statNew').innerText = formatMoney(sNew);
-            document.getElementById('statTtd').innerText = formatMoney(sTtd);
-            document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal);
-            document.getElementById('statTotalOrders').innerText = validOrders.length;
+            document.getElementById('statOut').innerText = formatMoney(sOut); document.getElementById('statVnl').innerText = formatMoney(sVnl);
+            document.getElementById('statNew').innerText = formatMoney(sNew); document.getElementById('statTtd').innerText = formatMoney(sTtd);
+            document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal); document.getElementById('statTotalOrders').innerText = validOrders.length;
             document.getElementById('statAvgOrder').innerText = validOrders.length ? formatMoney(grandTotal/validOrders.length) : '0 ₫';
-            
-            document.getElementById('statBomCount').innerText = bomOrders.length;
-            document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
-
+            document.getElementById('statBomCount').innerText = bomOrders.length; document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
             drawRevenueChart(dailyRevenue);
         }
-
         function drawRevenueChart(dataObj) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
             const sortedDates = Object.keys(dataObj).sort();
             const labels = sortedDates.length > 7 ? sortedDates.slice(-7) : sortedDates;
             const dataValues = labels.map(date => dataObj[date]);
             if (revenueChartInstance) revenueChartInstance.destroy();
-            revenueChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels.map(d => d.split('-').reverse().join('/')),
-                    datasets: [{ label: 'Doanh thu', data: dataValues, backgroundColor: '#034C5F', borderRadius: 4, barThickness: 20 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-            });
+            revenueChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels.map(d => d.split('-').reverse().join('/')), datasets: [{ label: 'Doanh thu', data: dataValues, backgroundColor: '#034C5F', borderRadius: 4, barThickness: 20 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } } });
         }
-
         function showToast(msg) { const t = document.getElementById("toast"); t.innerText = msg; t.className = "show"; setTimeout(() => { t.className = t.className.replace("show", ""); }, 3000); }
         function copyCustomerInfo(n, p, a) { navigator.clipboard.writeText(`${n}\n${p}\n${a}`).then(() => showToast("Đã copy info!")); }
-        
         function saveCRM() { userRef.child('v11_customers').set(customers); }
-        
         function autoFillByPhone() { const p = document.getElementById('custPhone').value; if(customers[p]) { document.getElementById('custName').value = customers[p].name; document.getElementById('custAddr').value = customers[p].address; } }
         function autoFillByName() { const n = document.getElementById('custName').value; const p = Object.keys(customers).find(k => customers[k].name === n); if(p) { document.getElementById('custPhone').value = p; document.getElementById('custAddr').value = customers[p].address; } }
-        
         function updateDatalists() { 
             document.getElementById('phoneDataList').innerHTML = Object.keys(customers).map(p => `<option value="${p}">${customers[p].name}</option>`).join('');
             document.getElementById('nameDataList').innerHTML = Object.keys(customers).map(p => `<option value="${customers[p].name}">${p}</option>`).join('');
         }
-        
         function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; userRef.child('v11_orders').set(orders); }
         function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); userRef.child('v11_orders').set(orders); } }
         function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
         
         function switchTab(t) {
-            ['view-orders', 'view-analytics', 'view-customers', 'view-inventory'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            ['view-orders', 'view-analytics', 'view-customers', 'view-inventory', 'view-cv'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById(`view-${t}`).classList.remove('hidden');
-            document.querySelectorAll('nav button').forEach(btn => btn.className = "px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all");
+            document.querySelectorAll('nav button').forEach(btn => btn.className = "px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all bg-transparent");
             document.getElementById(`tab-${t}`).className = "px-3 md:px-4 py-2 rounded-xl text-sm font-bold bg-white text-[#034C5F] shadow-sm";
             if(t === 'analytics') renderAnalytics();
             if(t === 'inventory') renderInventory();
             if(t === 'customers') renderCustomerCRM();
+            if(t === 'cv') { initCVSummaryFilters(); renderAllCV(); }
         }
 
-        // --- CẬP NHẬT LOGIC RENDER CUSTOMER ĐỂ SẮP XẾP ---
         function renderCustomerCRM() {
             const tbody = document.getElementById('customerTableBody');
             if(!tbody) return;
-            
-            const spendings = {}; 
-            orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
-            
-            const CUSTOMER_STATUS_STYLES = {
-                "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", 
-                "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", 
-                "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", 
-                "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", 
-                "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", 
-                "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", 
-                "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", 
-                "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", 
-                "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" 
-            };
-
-            // LẤY TIÊU CHÍ SẮP XẾP
-            const sortMode = document.getElementById('customerSortOrder').value;
-            const keys = Object.keys(customers);
-
-            // THỰC HIỆN SẮP XẾP
+            const spendings = {}; orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
+            const CUSTOMER_STATUS_STYLES = { "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" };
+            const sortMode = document.getElementById('customerSortOrder').value; const keys = Object.keys(customers);
             keys.sort((a, b) => {
-                if (sortMode === 'newest') {
-                    return (customers[b].timestamp || 0) - (customers[a].timestamp || 0);
-                } else if (sortMode === 'oldest') {
-                    return (customers[a].timestamp || 0) - (customers[b].timestamp || 0);
-                } else if (sortMode === 'name') {
-                    return customers[a].name.localeCompare(customers[b].name);
-                } else if (sortMode === 'spending') {
-                    return (spendings[b] || 0) - (spendings[a] || 0);
-                }
-                return 0;
+                if (sortMode === 'newest') return (customers[b].timestamp || 0) - (customers[a].timestamp || 0);
+                else if (sortMode === 'oldest') return (customers[a].timestamp || 0) - (customers[b].timestamp || 0);
+                else if (sortMode === 'name') return customers[a].name.localeCompare(customers[b].name);
+                else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); return 0;
             });
-
             tbody.innerHTML = keys.map((phone, index) => {
-                const c = customers[phone];
-                if(!c) return ""; 
-                
-                const currentStatus = c.status || 'Vãn lai';
-                const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
-
-                return `<tr>
-                    <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
-                    <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
-                    <td class="p-3">${phone}</td>
-                    <td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td>
-                    <td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input"></td>
-                    <td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457]"></td>
-                    <td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td>
-                    <td class="p-3">
-                        <select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" 
-                                class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}">
-                            <option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option>
-                            <option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option>
-                            <option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option>
-                            <option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option>
-                            <option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option>
-                            <option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option>
-                            <option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option>
-                            <option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option>
-                            <option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option>
-                        </select>
-                    </td>
-                    <td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td>
-                    <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
-                    <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>`;
+                const c = customers[phone]; if(!c) return ""; 
+                const currentStatus = c.status || 'Vãn lai'; const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
+                return `<tr><td class="p-3 text-center font-bold text-slate-400">${index + 1}</td><td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td><td class="p-3">${phone}</td><td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457]"></td><td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td><td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td><td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td><td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td><td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             }).join('');
         }
-        
         function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
-        
-        function deleteCustomer(p) {
-            if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) {
-                delete customers[p]; saveCRM();
-            }
+        function deleteCustomer(p) { if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) { delete customers[p]; saveCRM(); } }
+        function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('orderDate').valueAsDate = new Date(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
+        function editOrder(id) { const o = orders.find(x => x.id === id); document.getElementById('editOrderId').value = o.id; document.getElementById('custPhone').value = o.customer.phone; document.getElementById('custName').value = o.customer.name; document.getElementById('custAddr').value = o.customer.addr; document.getElementById('custType').value = o.customer.type || 'new'; document.getElementById('product-list').innerHTML = ""; o.products.forEach(p => addProductRow(p.name, p.price, p.qty)); document.getElementById('payMethod').value = o.payMethod; document.getElementById('shipFee').value = o.shipFee; document.getElementById('discountVal').value = o.discount.val; document.getElementById('discountType').value = o.discount.type; document.getElementById('orderDate').value = o.orderDate || o.date; document.getElementById('shipDate').value = o.date; document.getElementById('deliveryDate').value = o.deliveryDate; document.getElementById('orderNote').value = o.note || ''; document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-rotate mr-2"></i>Cập nhật'; calculateTotal(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        function openInvoice(id) { const o = orders.find(x => x.id === id); const noteHtml = o.note ? `<div style="padding:15px; background:#FDF5F4; border-radius:12px; font-size:12px; color:#034C5F; margin:15px 0; border:1px solid #F9C4BA;"><b style="color:#EE6457">Ghi chú:</b> ${o.note}</div>` : '<div style="margin-top:20px"></div>'; document.getElementById('invoiceContent').innerHTML = ` <div style="padding:40px 30px; text-align:center; background:white;"> <h1 style="margin:0; font-size:32px; font-weight:900; color:#034C5F; letter-spacing:1px;">HÓA ĐƠN</h1> <p style="margin:8px 0 0 0; color:#EE6457; font-size:14px; font-weight:600;">🌷 Mọi sản phẩm gửi đi là cả tấm lòng 🌷</p> </div> <div style="padding:0 30px 20px 30px; background:white;"> <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:15px; margin-bottom:15px;"> <div> <p style="font-weight:800; font-size:16px; margin:0; color:#034C5F;">${o.customer.name}</p> <p style="color:#444; font-size:13px; margin:3px 0;">${o.customer.phone}</p> <p style="color:#888; font-size:11px; margin:0; max-width:200px;">${o.customer.addr}</p> </div> <div style="text-align:right; font-size:11px; color:#64748b;"> <p>Ngày đặt: <b>${(o.orderDate || o.date).split('-').reverse().join('/')}</b></p> <p>Ngày gửi: <b>${o.date.split('-').reverse().join('/')}</b></p> <p style="color:#EE6457; font-weight:800; margin-top:5px; text-transform:uppercase;">${o.payMethod}</p> </div> </div> <table style="width:100%; border-collapse:collapse; font-size:13px;"> ${o.products.map(p => `<tr><td style="padding:10px 0; border-bottom:1px solid #f8fafc;">${p.name} (x${p.qty})</td><td style="text-align:right; font-weight:700; color:#034C5F;">${formatMoney(p.price*p.qty)}</td></tr>`).join('')} </table> ${noteHtml} <div style="border-top:2px solid #034C5F; padding-top:15px; margin-bottom:20px;"> <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:4px;"><span>Vận chuyển:</span><span>+ ${formatMoney(o.shipFee)}</span></div> <div style="display:flex; justify-content:space-between; font-size:12px; color:#EE6457; margin-bottom:10px;"><span>Giảm giá:</span><span>- ${o.discount.val}${o.discount.type==='percent'?'%':'₫'}</span></div> <div style="display:flex; justify-content:space-between; font-weight:900; font-size:28px; color:#034C5F;"><span>TỔNG THU:</span><span>${formatMoney(o.total)}</span></div> </div> <div style="text-align:center; padding-top:10px; border-top:1px dashed #F9C4BA;"> <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p> <p style="font-size:10px; color:#97BEC6; margin-top:4px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p> </div> </div>`; document.getElementById('invoiceModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
+        function downloadImage() { html2canvas(document.getElementById('invoiceContent'), { scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `HD_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); }); }
+        function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); const today = new Date(); document.getElementById('exportStartDate').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; document.getElementById('exportEndDate').value = today.toISOString().split('T')[0]; document.getElementById('exportFileName').value = `Don_Hang_Thang_${today.getMonth()+1}`; }
+        function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
+        function confirmExport() { const fileName = document.getElementById('exportFileName').value.trim() || `Export_${Date.now()}`; const s = document.getElementById('exportStartDate').value; const e = document.getElementById('exportEndDate').value; const data = orders.filter(o => { const targetDate = o.orderDate || o.date; return (!s || targetDate >= s) && (!e || targetDate <= e) }); let csv = "\ufeffMã Đơn,Ngày Đặt,Ngày Gửi,Tên,SĐT,Sản Phẩm,Tổng Tiền\n"; data.forEach(o => csv += `${o.id},${o.orderDate || o.date},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal(); }
+        function exportCustomersToExcel() { let csv = "\ufeffTên,SĐT,Địa Chỉ,Sinh Nhật,Ngày Kỉ Niệm,Công Việc,Tình Trạng,Ghi Chú,Tổng Chi\n"; Object.keys(customers).forEach(p => { const c = customers[p]; const totalSpend = orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0); csv += `"${c.name}","${p}","${c.address || ''}","${c.birthday || ''}","${c.anniversary || ''}","${c.job || ''}","${c.status || ''}","${c.note || ''}","${totalSpend}"\n`; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "KhachHang.csv"; link.click(); }
+        function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
+
+        // ==========================================
+        // KHỐI JAVASCRIPT CHO THỐNG KÊ CV (CẬP NHẬT)
+        // ==========================================
+        function saveCVSync() {
+            userRef.update({
+                'v11_cv_accumulations': cvAccumulations,
+                'v11_cv_monthly': cvMonthlyStats
+            });
         }
 
-        function resetForm() { 
-            document.getElementById('orderForm').reset(); 
-            document.getElementById('editOrderId').value = ""; 
-            document.getElementById('product-list').innerHTML = ""; 
-            addProductRow(); 
-            document.getElementById('orderDate').valueAsDate = new Date();
-            document.getElementById('shipDate').valueAsDate = new Date(); 
-            autoSetDeliveryDate(); 
-            calculateTotal(); 
-            document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; 
+        function renderAllCV() {
+            renderCVAccumulations();
+            renderCVMonthlyStats();
+            renderCVSummary();
         }
-        
-        function editOrder(id) {
-            const o = orders.find(x => x.id === id);
-            document.getElementById('editOrderId').value = o.id;
-            document.getElementById('custPhone').value = o.customer.phone;
-            document.getElementById('custName').value = o.customer.name;
-            document.getElementById('custAddr').value = o.customer.addr;
-            document.getElementById('custType').value = o.customer.type || 'new';
-            document.getElementById('product-list').innerHTML = "";
-            o.products.forEach(p => addProductRow(p.name, p.price, p.qty));
-            document.getElementById('payMethod').value = o.payMethod;
-            document.getElementById('shipFee').value = o.shipFee;
-            document.getElementById('discountVal').value = o.discount.val;
-            document.getElementById('discountType').value = o.discount.type;
-            document.getElementById('orderDate').value = o.orderDate || o.date;
-            document.getElementById('shipDate').value = o.date;
-            document.getElementById('deliveryDate').value = o.deliveryDate;
-            document.getElementById('orderNote').value = o.note || '';
-            document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-rotate mr-2"></i>Cập nhật';
-            calculateTotal();
+
+        // BẢNG 1: TÍCH LŨY (THÊM / CẬP NHẬT)
+        function addCVAccumulation() {
+            let amtInput = document.getElementById('cvAccAmount').value;
+            let amount = parseCurrency(amtInput);
+            let date = document.getElementById('cvAccDate').value;
+            let method = document.getElementById('cvAccMethod').value;
+            let note = document.getElementById('cvAccNote').value;
+            let editId = document.getElementById('editCvAccId').value;
+
+            if (!amount || !date) return showToast("Vui lòng nhập số tiền và ngày tích!");
+
+            if(editId) {
+                // Sửa dòng đã tồn tại
+                let idx = cvAccumulations.findIndex(a => a.id == editId);
+                if(idx !== -1) {
+                    cvAccumulations[idx].amount = amount;
+                    cvAccumulations[idx].date = date;
+                    cvAccumulations[idx].method = method;
+                    cvAccumulations[idx].note = note;
+                }
+                document.getElementById('editCvAccId').value = "";
+                document.getElementById('btnSaveCVAcc').innerText = "THÊM";
+            } else {
+                // Thêm mới
+                cvAccumulations.push({
+                    id: Date.now(),
+                    amount: amount,
+                    date: date,
+                    method: method,
+                    checked: false,
+                    note: note
+                });
+            }
+
+            // Reset form
+            document.getElementById('cvAccAmount').value = '';
+            document.getElementById('cvAccDate').value = '';
+            document.getElementById('cvAccNote').value = '';
+
+            // Sắp xếp lại theo ngày mới nhất
+            cvAccumulations.sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            saveCVSync();
+            renderAllCV(); 
+            showToast("Đã lưu tích lũy thành công!");
+        }
+
+        function editCVAccumulation(id) {
+            let acc = cvAccumulations.find(a => a.id === id);
+            if(!acc) return;
+            document.getElementById('editCvAccId').value = acc.id;
+            document.getElementById('cvAccAmount').value = new Intl.NumberFormat('en-US').format(acc.amount);
+            document.getElementById('cvAccDate').value = acc.date;
+            document.getElementById('cvAccMethod').value = acc.method;
+            document.getElementById('cvAccNote').value = acc.note || '';
+            document.getElementById('btnSaveCVAcc').innerText = "CẬP NHẬT";
+            // Kéo lên trên form
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function openInvoice(id) {
-            const o = orders.find(x => x.id === id);
-            const noteHtml = o.note ? `<div style="padding:15px; background:#FDF5F4; border-radius:12px; font-size:12px; color:#034C5F; margin:15px 0; border:1px solid #F9C4BA;"><b style="color:#EE6457">Ghi chú:</b> ${o.note}</div>` : '<div style="margin-top:20px"></div>';
-            document.getElementById('invoiceContent').innerHTML = `
-                <div style="padding:40px 30px; text-align:center; background:white;">
-                    <h1 style="margin:0; font-size:32px; font-weight:900; color:#034C5F; letter-spacing:1px;">HÓA ĐƠN</h1>
-                    <p style="margin:8px 0 0 0; color:#EE6457; font-size:14px; font-weight:600;">🌷 Mọi sản phẩm gửi đi là cả tấm lòng 🌷</p>
-                </div>
-                <div style="padding:0 30px 20px 30px; background:white;">
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:15px; margin-bottom:15px;">
-                        <div>
-                            <p style="font-weight:800; font-size:16px; margin:0; color:#034C5F;">${o.customer.name}</p>
-                            <p style="color:#444; font-size:13px; margin:3px 0;">${o.customer.phone}</p>
-                            <p style="color:#888; font-size:11px; margin:0; max-width:200px;">${o.customer.addr}</p>
-                        </div>
-                        <div style="text-align:right; font-size:11px; color:#64748b;">
-                            <p>Ngày đặt: <b>${(o.orderDate || o.date).split('-').reverse().join('/')}</b></p>
-                            <p>Ngày gửi: <b>${o.date.split('-').reverse().join('/')}</b></p>
-                            <p style="color:#EE6457; font-weight:800; margin-top:5px; text-transform:uppercase;">${o.payMethod}</p>
-                        </div>
-                    </div>
-                    <table style="width:100%; border-collapse:collapse; font-size:13px;">
-                        ${o.products.map(p => `<tr><td style="padding:10px 0; border-bottom:1px solid #f8fafc;">${p.name} (x${p.qty})</td><td style="text-align:right; font-weight:700; color:#034C5F;">${formatMoney(p.price*p.qty)}</td></tr>`).join('')}
-                    </table>
-                    ${noteHtml}
-                    <div style="border-top:2px solid #034C5F; padding-top:15px; margin-bottom:20px;">
-                        <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:4px;"><span>Vận chuyển:</span><span>+ ${formatMoney(o.shipFee)}</span></div>
-                        <div style="display:flex; justify-content:space-between; font-size:12px; color:#EE6457; margin-bottom:10px;"><span>Giảm giá:</span><span>- ${o.discount.val}${o.discount.type==='percent'?'%':'₫'}</span></div>
-                        <div style="display:flex; justify-content:space-between; font-weight:900; font-size:28px; color:#034C5F;"><span>TỔNG THU:</span><span>${formatMoney(o.total)}</span></div>
-                    </div>
-                     <div style="text-align:center; padding-top:10px; border-top:1px dashed #F9C4BA;">
-                        <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p>
-                        <p style="font-size:10px; color:#97BEC6; margin-top:4px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p>
-                     </div>
-                </div>`;
-            document.getElementById('invoiceModal').classList.remove('hidden');
+        function toggleCVCheck(id) {
+            let acc = cvAccumulations.find(a => a.id === id);
+            if(acc) {
+                acc.checked = !acc.checked;
+                saveCVSync();
+                renderCVAccumulations();
+            }
         }
-        function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
-        function downloadImage() { html2canvas(document.getElementById('invoiceContent'), { scale: 2 }).then(canvas => { const link = document.createElement('a'); link.download = `HD_${Date.now()}.png`; link.href = canvas.toDataURL(); link.click(); }); }
-        
-        function openExportModal() {
-            document.getElementById('exportModal').classList.remove('hidden');
-            const today = new Date(); document.getElementById('exportStartDate').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-            document.getElementById('exportEndDate').value = today.toISOString().split('T')[0];
-            document.getElementById('exportFileName').value = `Don_Hang_Thang_${today.getMonth()+1}`;
-        }
-        function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
-        function confirmExport() {
-            const fileName = document.getElementById('exportFileName').value.trim() || `Export_${Date.now()}`;
-            const s = document.getElementById('exportStartDate').value; const e = document.getElementById('exportEndDate').value;
-            const data = orders.filter(o => {
-                const targetDate = o.orderDate || o.date;
-                return (!s || targetDate >= s) && (!e || targetDate <= e)
-            });
-            let csv = "\ufeffMã Đơn,Ngày Đặt,Ngày Gửi,Tên,SĐT,Sản Phẩm,Tổng Tiền\n";
-            data.forEach(o => csv += `${o.id},${o.orderDate || o.date},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`);
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal();
-        }
-        function exportCustomersToExcel() {
-            let csv = "\ufeffTên,SĐT,Địa Chỉ,Sinh Nhật,Ngày Kỉ Niệm,Công Việc,Tình Trạng,Ghi Chú,Tổng Chi\n";
-            Object.keys(customers).forEach(p => { 
-                const c = customers[p];
-                const totalSpend = orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0);
-                csv += `"${c.name}","${p}","${c.address || ''}","${c.birthday || ''}","${c.anniversary || ''}","${c.job || ''}","${c.status || ''}","${c.note || ''}","${totalSpend}"\n`; 
-            });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "KhachHang.csv"; link.click();
-        }
-        function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
 
+        function deleteCVAccumulation(id) {
+            if(confirm("Xóa dòng tích lũy này?")) {
+                cvAccumulations = cvAccumulations.filter(a => a.id !== id);
+                saveCVSync();
+                renderAllCV();
+            }
+        }
+
+        function renderCVAccumulations() {
+            const tbody = document.getElementById('cvAccTableBody');
+            const filterMonth = document.getElementById('cvAccFilterMonth').value;
+            
+            let filtered = cvAccumulations;
+            if (filterMonth) {
+                filtered = cvAccumulations.filter(acc => acc.date && acc.date.startsWith(filterMonth));
+            }
+
+            tbody.innerHTML = filtered.map((acc) => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-4 font-bold text-[#034C5F]">${acc.date.split('-').reverse().join('/')}</td>
+                    <td class="p-4 text-right font-black text-[#EE6457] text-[16px]">${new Intl.NumberFormat('en-US').format(acc.amount)} đ</td>
+                    <td class="p-4 text-center"><span class="px-2 py-1 bg-slate-100 rounded-md text-xs font-bold text-slate-600">${acc.method}</span></td>
+                    <td class="p-4 text-xs italic text-slate-500">${acc.note || ''}</td>
+                    <td class="p-4 text-center">
+                        <input type="checkbox" ${acc.checked ? 'checked' : ''} onchange="toggleCVCheck(${acc.id})" class="w-5 h-5 accent-[#034C5F] cursor-pointer">
+                    </td>
+                    <td class="p-4 text-center">
+                        <div class="flex justify-center gap-3">
+                            <button onclick="editCVAccumulation(${acc.id})" class="text-[#97BEC6] hover:text-[#034C5F]" title="Chỉnh sửa"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
+                            <button onclick="deleteCVAccumulation(${acc.id})" class="text-slate-300 hover:text-red-500" title="Xóa"><i class="fa-solid fa-trash text-lg"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // BẢNG 2: THEO THÁNG (THÊM / CẬP NHẬT)
+        function getSumAccumulationForMonth(yyyy_mm) {
+            return cvAccumulations.reduce((sum, acc) => {
+                if (acc.date && acc.date.startsWith(yyyy_mm)) return sum + acc.amount;
+                return sum;
+            }, 0);
+        }
+
+        function saveCVMonthlyStat() {
+            let monthPick = document.getElementById('cvMonthPick').value; // format: YYYY-MM
+            let cv = parseCurrency(document.getElementById('cvMonthCV').value);
+            let importAmt = parseCurrency(document.getElementById('cvMonthImport').value);
+            let note = document.getElementById('cvMonthNote').value;
+
+            if(!monthPick) return showToast("Vui lòng chọn Tháng để lưu!");
+
+            cvMonthlyStats[monthPick] = {
+                cv: cv,
+                importAmt: importAmt,
+                note: note
+            };
+
+            // Reset
+            document.getElementById('cvMonthCV').value = '';
+            document.getElementById('cvMonthImport').value = '';
+            document.getElementById('cvMonthNote').value = '';
+            document.getElementById('btnSaveCVMonth').innerText = "LƯU THÁNG";
+
+            saveCVSync();
+            renderAllCV();
+            showToast("Đã lưu số liệu tháng!");
+        }
+
+        function editCVMonthlyStat(monthKey) {
+            let stat = cvMonthlyStats[monthKey];
+            if(!stat) return;
+            document.getElementById('cvMonthPick').value = monthKey;
+            document.getElementById('cvMonthCV').value = new Intl.NumberFormat('en-US').format(stat.cv || 0);
+            document.getElementById('cvMonthImport').value = new Intl.NumberFormat('en-US').format(stat.importAmt || 0);
+            document.getElementById('cvMonthNote').value = stat.note || '';
+            document.getElementById('btnSaveCVMonth').innerText = "CẬP NHẬT";
+            // Kéo view lên form nhập
+            document.getElementById('cvMonthPick').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function deleteCVMonthlyStat(monthKey) {
+            if(confirm(`Xóa thống kê của tháng ${monthKey}?`)) {
+                delete cvMonthlyStats[monthKey];
+                saveCVSync();
+                renderAllCV();
+            }
+        }
+
+        function renderCVMonthlyStats() {
+            const tbody = document.getElementById('cvMonthTableBody');
+            
+            // Lấy tất cả các tháng từ cvMonthlyStats và từ cvAccumulations để render đủ
+            let allMonths = new Set(Object.keys(cvMonthlyStats));
+            cvAccumulations.forEach(acc => {
+                if(acc.date) allMonths.add(acc.date.substring(0,7));
+            });
+
+            let sortedMonths = Array.from(allMonths).sort((a,b) => b.localeCompare(a)); // Mới nhất lên đầu
+
+            tbody.innerHTML = sortedMonths.map(month => {
+                let stat = cvMonthlyStats[month] || { cv: 0, importAmt: 0, note: '' };
+                let totalAcc = getSumAccumulationForMonth(month);
+                let remaining = totalAcc - stat.importAmt;
+                
+                return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="p-4 text-center font-black text-[#034C5F]">${month}</td>
+                    <td class="p-4 text-right font-bold text-slate-700">${new Intl.NumberFormat('en-US').format(totalAcc)} đ</td>
+                    <td class="p-4 text-right font-bold text-indigo-600">${new Intl.NumberFormat('en-US').format(stat.cv)}</td>
+                    <td class="p-4 text-right font-bold text-red-500">${new Intl.NumberFormat('en-US').format(stat.importAmt)} đ</td>
+                    <td class="p-4 text-right font-black ${remaining >= 0 ? 'text-green-600' : 'text-red-600'}">${new Intl.NumberFormat('en-US').format(remaining)} đ</td>
+                    <td class="p-4 text-xs italic flex justify-end items-center gap-2">
+                        <span class="mr-auto">${stat.note || ''}</span>
+                        ${cvMonthlyStats[month] ? `
+                            <button onclick="editCVMonthlyStat('${month}')" class="text-[#97BEC6] hover:text-[#034C5F]" title="Chỉnh sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteCVMonthlyStat('${month}')" class="text-slate-300 hover:text-red-500" title="Xóa"><i class="fa-solid fa-trash"></i></button>
+                        ` : ''}
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // BẢNG 3: TỔNG HỢP (Lọc)
+        function initCVSummaryFilters() {
+            let yearSelect = document.getElementById('cvSumYear');
+            let currentYear = new Date().getFullYear();
+            let yearsHtml = `<option value="all">Tất cả các năm</option>`;
+            for(let y = currentYear - 2; y <= currentYear + 2; y++) {
+                yearsHtml += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>Năm ${y}</option>`;
+            }
+            yearSelect.innerHTML = yearsHtml;
+        }
+
+        function renderCVSummary() {
+            let mFilter = document.getElementById('cvSumMonth').value;
+            let yFilter = document.getElementById('cvSumYear').value;
+
+            let totalCV = 0;
+            let totalAcc = 0;
+            let totalImport = 0;
+
+            // Tính Tổng Tiền Tích (Quét mảng cvAccumulations)
+            cvAccumulations.forEach(acc => {
+                if(!acc.date) return;
+                let [y, m, d] = acc.date.split('-');
+                if( (yFilter === 'all' || y === yFilter) && (mFilter === 'all' || m === mFilter) ) {
+                    totalAcc += acc.amount;
+                }
+            });
+
+            // Tính Tổng CV & Tổng Nhập (Quét object cvMonthlyStats)
+            for (let monthKey in cvMonthlyStats) {
+                let [y, m] = monthKey.split('-');
+                if( (yFilter === 'all' || y === yFilter) && (mFilter === 'all' || m === mFilter) ) {
+                    totalCV += cvMonthlyStats[monthKey].cv || 0;
+                    totalImport += cvMonthlyStats[monthKey].importAmt || 0;
+                }
+            }
+
+            let remain = totalAcc - totalImport;
+
+            document.getElementById('sumCV').innerText = new Intl.NumberFormat('en-US').format(totalCV);
+            document.getElementById('sumAcc').innerText = formatMoney(totalAcc);
+            document.getElementById('sumImport').innerText = formatMoney(totalImport);
+            document.getElementById('sumRemain').innerText = formatMoney(remain);
+        }
+
+        // Init App
         document.getElementById('orderDate').valueAsDate = new Date();
         document.getElementById('shipDate').valueAsDate = new Date(); 
+        document.getElementById('cvAccDate').valueAsDate = new Date();
+        
+        let d = new Date();
+        let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+        document.getElementById('cvMonthPick').value = currentMonthStr;
+
         autoSetDeliveryDate(); 
         addProductRow();
     </script>
