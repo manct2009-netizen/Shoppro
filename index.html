@@ -67,9 +67,33 @@
         }
         .bg-light-pink { background-color: #fce7f3 !important; color: #db2777; font-weight: 700; border-radius: 8px; }
         .bg-light-blue { background-color: #dbeafe !important; color: #2563eb; font-weight: 700; border-radius: 8px; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="pb-24">
+    <div id="loginModal" class="fixed inset-0 bg-[#034C5F]/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
+        <div class="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl border-[4px] border-[#F9C4BA] text-center transform transition-all">
+            <div class="w-20 h-20 bg-[#FDF5F4] text-[#034C5F] rounded-2xl mx-auto flex items-center justify-center text-4xl mb-4 shadow-inner border border-[#F9C4BA]">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h2 class="text-3xl font-black text-[#034C5F] tracking-tight uppercase">Sunset<span class="text-[#EE6457] font-light">Shop</span></h2>
+            <p class="text-[11px] font-bold text-[#97BEC6] uppercase tracking-widest mt-1 mb-8">Hệ Thống Quản Lý V11</p>
+            
+            <div class="space-y-4">
+                <div class="text-left">
+                    <label class="text-[10px] font-bold text-[#97BEC6] uppercase ml-1">Nhập mã nhân viên của bạn</label>
+                    <input type="text" id="employeeIdInput" onkeydown="if(event.key === 'Enter') handleLogin()" class="w-full mt-1 px-4 py-4 rounded-xl border-2 border-[#FDF5F4] bg-[#FDF5F4] focus:border-[#034C5F] focus:bg-white focus:ring-4 focus:ring-[#034C5F]/10 outline-none text-center font-black text-xl text-[#034C5F] uppercase transition-all shadow-inner" placeholder="VD: 123456, 223672...">
+                </div>
+                <button onclick="handleLogin()" class="w-full py-4 bg-[#EE6457] text-white rounded-xl font-black uppercase text-sm hover:bg-[#d85449] hover:scale-[1.02] transition-all shadow-lg flex items-center justify-center gap-2">
+                    Vào Hệ Thống <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                </button>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-6 italic">* Dữ liệu của bạn được đồng bộ tự động theo mã này.</p>
+        </div>
+    </div>
+
     <div id="toast">Thông báo hệ thống</div>
     <datalist id="productDataList"></datalist>
 
@@ -89,6 +113,9 @@
             </nav>
 
             <div class="flex gap-2">
+                <button onclick="handleLogout()" class="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center border border-red-100" title="Đăng xuất mã nhân viên">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
                 <button onclick="document.getElementById('fileInput').click()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-[#EE6457] hover:text-white transition-all flex items-center justify-center" title="Khôi phục">
                     <i class="fa-solid fa-upload"></i>
                 </button>
@@ -99,11 +126,6 @@
             </div>
         </div>
     </header>
-
-    <style>
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
 
     <main class="container mx-auto p-4 lg:max-w-7xl">
         <div id="view-orders" class="space-y-6">
@@ -605,17 +627,71 @@
         const db = firebase.database();
 
         let employeeId = localStorage.getItem('v11_employee_id');
-        if (!employeeId) {
-            employeeId = prompt("👋 Chào bạn, vui lòng nhập MÃ NHÂN VIÊN của bạn (Ví dụ: NV01, NV02...).\nMã này giúp đồng bộ dữ liệu của bạn giữa các thiết bị:");
-            if (employeeId && employeeId.trim() !== "") {
-                employeeId = employeeId.trim().toUpperCase();
-                localStorage.setItem('v11_employee_id', employeeId);
+        let userRef; // Chuyển biến này ra ngoài
+
+        // HÀM XỬ LÝ ĐĂNG NHẬP
+        function handleLogin() {
+            const inputVal = document.getElementById('employeeIdInput').value.trim();
+            if (inputVal !== "") {
+                const upperId = inputVal.toUpperCase();
+                localStorage.setItem('v11_employee_id', upperId);
+                // Tải lại trang để áp dụng mã mới ngay lập tức
+                window.location.reload(); 
             } else {
-                employeeId = "GUEST_" + Math.floor(Math.random() * 10000);
+                alert("Vui lòng nhập Mã Nhân Viên để tiếp tục!");
             }
         }
-        
-        const userRef = db.ref('SunsetShopData/Employees/' + employeeId);
+
+        // HÀM XỬ LÝ ĐĂNG XUẤT
+        function handleLogout() {
+            if(confirm("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nhân viên hiện tại?\n(Bạn sẽ cần nhập mã mới để vào lại hệ thống)")) {
+                localStorage.removeItem('v11_employee_id');
+                window.location.reload();
+            }
+        }
+
+        // KHỞI TẠO DỮ LIỆU KHI ĐÃ CÓ MÃ NHÂN VIÊN
+        function initDataSync() {
+            userRef = db.ref('SunsetShopData/Employees/' + employeeId);
+            userRef.on('value', (snapshot) => {
+                const data = snapshot.val() || {};
+                orders = data.v11_orders || [];
+                
+                let rawCust = data.v11_customers || {};
+                customers = {};
+                for (let key in rawCust) {
+                    if (rawCust[key] !== null && rawCust[key] !== undefined) {
+                        customers[key] = rawCust[key];
+                    }
+                }
+
+                inventory = data.v11_inventory || [];
+                cvAccumulations = data.v11_cv_accumulations || [];
+                cvMonthlyStats = data.v11_cv_monthly || {};
+
+                renderTable();
+                renderCustomerCRM();
+                renderInventory();
+                updateProductDatalist();
+                updateDatalists();
+                
+                if(!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
+                if(!document.getElementById('view-cv').classList.contains('hidden')) renderAllCV();
+
+                checkAndShowEvents();
+            });
+        }
+
+        // KIỂM TRA ĐĂNG NHẬP KHI TẢI TRANG
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!employeeId) {
+                // Hiện giao diện đăng nhập nếu chưa có mã
+                document.getElementById('loginModal').classList.remove('hidden');
+            } else {
+                // Có mã rồi thì chạy hệ thống như bình thường
+                initDataSync();
+            }
+        });
 
         const STATUS_OPTIONS = ["Đợi gửi", "Đang giao", "Thành công ✅", "Đơn BOM 💣", "HD Sử dụng", "Chăm sóc", "Xử lý", "Đã Hủy"];
         const STATUS_COLORS = { 
@@ -634,10 +710,8 @@
         let customers = {};
         let inventory = [];
         let revenueChartInstance = null;
-
         let cvAccumulations = [];
         let cvMonthlyStats = {};
-
         let hasShownEventPopup = false; 
 
         function checkAndShowEvents() {
@@ -730,60 +804,14 @@
             hasShownEventPopup = true; 
         }
 
-        function closeEventModal() {
-            document.getElementById('eventModal').classList.add('hidden');
-        }
-
-        userRef.on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            orders = data.v11_orders || [];
-            
-            let rawCust = data.v11_customers || {};
-            customers = {};
-            for (let key in rawCust) {
-                if (rawCust[key] !== null && rawCust[key] !== undefined) {
-                    customers[key] = rawCust[key];
-                }
-            }
-
-            inventory = data.v11_inventory || [];
-            
-            cvAccumulations = data.v11_cv_accumulations || [];
-            cvMonthlyStats = data.v11_cv_monthly || {};
-
-            renderTable();
-            renderCustomerCRM();
-            renderInventory();
-            updateProductDatalist();
-            updateDatalists();
-            
-            if(!document.getElementById('view-analytics').classList.contains('hidden')) {
-                renderAnalytics();
-            }
-            if(!document.getElementById('view-cv').classList.contains('hidden')) {
-                renderAllCV();
-            }
-
-            checkAndShowEvents();
-        });
+        function closeEventModal() { document.getElementById('eventModal').classList.add('hidden'); }
 
         const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
-        
-        // Hỗ trợ phân cách hàng nghìn cho giá tiền (1,500,000)
-        function formatCurrencyInput(input) {
-            let value = input.value.replace(/\D/g, ""); 
-            if (value !== "") {
-                input.value = new Intl.NumberFormat('en-US').format(value);
-            } else {
-                input.value = "";
-            }
-        }
-        function parseCurrency(str) {
-            if (!str) return 0;
-            return parseInt(String(str).replace(/\D/g, ""), 10) || 0;
-        }
+        function formatCurrencyInput(input) { let value = input.value.replace(/\D/g, ""); if (value !== "") { input.value = new Intl.NumberFormat('en-US').format(value); } else { input.value = ""; } }
+        function parseCurrency(str) { if (!str) return 0; return parseInt(String(str).replace(/\D/g, ""), 10) || 0; }
 
         function backupData() {
+            if(!employeeId) return;
             const data = { version: "11.0", timestamp: new Date().toISOString(), orders, customers, inventory, cvAccumulations, cvMonthlyStats };
             const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
             const url = URL.createObjectURL(blob);
@@ -792,6 +820,7 @@
         }
 
         function restoreData(input) {
+            if(!employeeId) return;
             const file = input.files[0];
             if (!file) return;
             if(!confirm("CẢNH BÁO: Dữ liệu hiện tại sẽ bị ghi đè. Hãy chắc chắn bạn đã sao lưu trước đó!")) { input.value = ''; return; }
@@ -849,12 +878,8 @@
                 <tr class="hover:bg-white transition-colors">
                     <td class="p-3"><input type="text" value="${p.name}" onchange="updateInventoryProduct(${originalIdx}, 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
                     <td class="p-3"><input type="text" inputmode="numeric" value="${new Intl.NumberFormat('en-US').format(p.price)}" oninput="formatCurrencyInput(this)" onchange="updateInventoryProduct(${originalIdx}, 'price', this.value)" class="crm-input text-[#EE6457]"></td>
-                    <td class="p-3 text-center">
-                        <input type="number" value="${p.qty}" onchange="updateInventoryProduct(${originalIdx}, 'qty', this.value)" class="crm-input text-center ${stockClass}" style="font-size:14px;">
-                    </td>
-                    <td class="p-3 text-right">
-                        <button onclick="deleteInventoryProduct(${originalIdx})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
-                    </td>
+                    <td class="p-3 text-center"><input type="number" value="${p.qty}" onchange="updateInventoryProduct(${originalIdx}, 'qty', this.value)" class="crm-input text-center ${stockClass}" style="font-size:14px;"></td>
+                    <td class="p-3 text-right"><button onclick="deleteInventoryProduct(${originalIdx})" class="text-slate-300 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             });
             tbody.innerHTML = html;
@@ -936,20 +961,15 @@
                 });
             }
             
-            // --- FIX NGÀY KỈ NIỆM ---
             if(!customers[phone]) {
-                // Khách hàng hoàn toàn mới
                 customers[phone] = { name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai', timestamp: Date.now() };
             } else { 
-                // Khách hàng cũ
                 customers[phone].name = name; 
                 customers[phone].address = addr; 
-                // Chỉ lấy ngày đặt làm ngày kỉ niệm nếu trước đó khách chưa có ngày kỉ niệm (ví dụ thêm tay)
                 if (!customers[phone].anniversary) {
                     customers[phone].anniversary = document.getElementById('orderDate').value;
                 }
             }
-            // ------------------------
 
             const { subtotal, total } = calculateTotal();
             const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
