@@ -428,7 +428,10 @@
 
             <section class="card overflow-hidden">
                 <div class="p-4 bg-white border-b border-soft-pink border-t-[6px] border-[#034C5F]">
-                    <h3 class="font-bold text-[#034C5F] text-sm uppercase mb-4"><i class="fa-solid fa-calendar-check mr-2"></i>Thống kê CV theo tháng</h3>
+                    <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+                      <h3 class="font-bold text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-calendar-check mr-2"></i>Thống kê CV theo tháng</h3>
+                  <button onclick="exportCVToExcel()" class="bg-[#FDF5F4] text-[#EE6457] px-4 py-2 rounded-xl text-xs font-bold border border-[#F9C4BA] hover:bg-[#EE6457] hover:text-white transition-all whitespace-nowrap"><i class="fa-solid fa-file-csv mr-1"></i> Xuất CSV</button>
+              </div>
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-3 bg-[#FDF5F4] p-4 rounded-xl border border-[#F9C4BA]">
                         <div>
                             <label class="text-[10px] font-bold text-[#97BEC6] uppercase">Chọn Tháng lưu</label>
@@ -1207,6 +1210,37 @@
             document.getElementById('sumAcc').innerText = formatMoney(totalAcc);
             document.getElementById('sumImport').innerText = formatMoney(totalImport);
             document.getElementById('sumRemain').innerText = formatMoney(remain);
+        }
+
+            // BẢNG 4: XUẤT EXCEL THỐNG KÊ CV
+        function exportCVToExcel() {
+            let csv = "\ufeffTháng,Tổng tiền tích (Tự động),CV,Tổng tiền nhập,Còn Lại Chưa Nâng,Ghi chú\n";
+            
+            // Lấy danh sách tất cả các tháng
+            let allMonths = new Set(Object.keys(cvMonthlyStats));
+            cvAccumulations.forEach(acc => {
+                if(acc.date) allMonths.add(acc.date.substring(0,7));
+            });
+            let sortedMonths = Array.from(allMonths).sort((a,b) => b.localeCompare(a));
+
+            // Đổ dữ liệu vào CSV
+            sortedMonths.forEach(month => {
+                let stat = cvMonthlyStats[month] || { cv: 0, importAmt: 0, note: '' };
+                let totalAcc = getSumAccumulationForMonth(month);
+                let remaining = totalAcc - stat.importAmt;
+                
+                // Xử lý chuỗi ghi chú để tránh lỗi dấu phẩy trong file CSV
+                let note = stat.note ? stat.note.replace(/"/g, '""') : '';
+                
+                csv += `"${month}","${totalAcc}","${stat.cv}","${stat.importAmt}","${remaining}","${note}"\n`;
+            });
+
+            // Tạo và tải file
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            link.download = `Thong_Ke_CV_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            showToast("Đã xuất file Excel thống kê CV!");
         }
 
         // Init App
