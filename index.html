@@ -878,6 +878,7 @@
             document.getElementById('finalTotal').innerText = formatMoney(total);
             return { subtotal, total };
         }
+        
         function saveOrder() {
             const phone = document.getElementById('custPhone').value.trim();
             const name = document.getElementById('custName').value.trim();
@@ -901,11 +902,22 @@
                     else inventory.push({ name: p.name, price: p.price, qty: 0 });
                 });
             }
+            
+            // --- FIX NGÀY KỈ NIỆM ---
             if(!customers[phone]) {
+                // Khách hàng hoàn toàn mới
                 customers[phone] = { name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai', timestamp: Date.now() };
             } else { 
-                customers[phone].name = name; customers[phone].address = addr; 
+                // Khách hàng cũ
+                customers[phone].name = name; 
+                customers[phone].address = addr; 
+                // Chỉ lấy ngày đặt làm ngày kỉ niệm nếu trước đó khách chưa có ngày kỉ niệm (ví dụ thêm tay)
+                if (!customers[phone].anniversary) {
+                    customers[phone].anniversary = document.getElementById('orderDate').value;
+                }
             }
+            // ------------------------
+
             const { subtotal, total } = calculateTotal();
             const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
             const order = { 
@@ -924,6 +936,7 @@
             userRef.update({ 'v11_orders': orders, 'v11_customers': customers, 'v11_inventory': inventory });
             resetForm(); showToast("Đã lưu đồng bộ thành công!");
         }
+
         function addManualCustomer() {
             const phone = document.getElementById('newCustPhone').value.trim();
             const name = document.getElementById('newCustName').value.trim();
@@ -1064,15 +1077,13 @@
                 return `<tr><td class="p-3 text-center font-bold text-slate-400">${index + 1}</td><td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td><td class="p-3">${phone}</td><td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer hover:bg-white/50 flatpickr-date"></td><td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457] cursor-pointer hover:bg-white/50 flatpickr-date"></td><td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td><td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td><td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td><td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td><td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             }).join('');
 
-            // Kích hoạt Flatpickr cho các ô Sinh nhật và Kỉ niệm
             if (typeof flatpickr !== "undefined") {
                 flatpickr(".flatpickr-date", {
                     dateFormat: "Y-m-d",
-                    disableMobile: true, // Kích hoạt giao diện cuộn chọn cực nhanh trên điện thoại
+                    disableMobile: true,
                     allowInput: true,
                     locale: "vn",
                     onChange: function(selectedDates, dateStr, instance) {
-                        // Tự động trigger sự kiện lưu sau khi chọn trên giao diện picker mới
                         instance.element.dispatchEvent(new Event('change'));
                     }
                 });
