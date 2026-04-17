@@ -9,6 +9,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -354,8 +358,8 @@
                                 <th class="p-4">Tên Khách</th>
                                 <th class="p-4">Số điện thoại</th>
                                 <th class="p-4">Địa chỉ</th>
-                                <th class="p-4">Sinh nhật</th>
-                                <th class="p-4">Ngày kỉ niệm</th>
+                                <th class="p-4"><i class="fa-solid fa-cake-candles mr-1 text-[#EE6457]"></i> Sinh nhật</th>
+                                <th class="p-4"><i class="fa-solid fa-heart mr-1 text-[#EE6457]"></i> Ngày kỉ niệm</th>
                                 <th class="p-4">Công việc</th>
                                 <th class="p-4">Tình trạng</th>
                                 <th class="p-4">Ghi chú</th>
@@ -536,6 +540,26 @@
         </div>
     </div>
 
+    <div id="eventModal" class="fixed inset-0 bg-[#034C5F]/80 hidden z-[60] flex items-center justify-center p-4 backdrop-blur-md transition-opacity duration-300">
+        <div class="bg-white rounded-[24px] w-full max-w-md shadow-2xl overflow-hidden relative border-2 border-[#F9C4BA]">
+            <div class="bg-gradient-to-r from-[#FDF5F4] to-white p-5 border-b border-[#F9C4BA] flex justify-between items-center">
+                <h3 class="text-[#034C5F] font-black text-base md:text-lg uppercase flex items-center gap-2">
+                    <i class="fa-solid fa-gift text-[#EE6457]"></i> Sự Kiện Tháng Này
+                </h3>
+                <button onclick="closeEventModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-[#EE6457] hover:text-white transition-all shadow-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="eventModalContent" class="p-6 max-h-[60vh] overflow-y-auto space-y-6 custom-scrollbar">
+                </div>
+            <div class="p-4 border-t border-slate-100 bg-[#FDF5F4] flex justify-center">
+                <button onclick="closeEventModal()" class="w-full py-3 bg-[#034C5F] text-white rounded-xl font-bold text-xs hover:bg-[#023846] transition-all shadow-md tracking-wider uppercase">
+                    Tuyệt vời, Đã hiểu!
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBR83SJnuVtaoGKZ6LYKEQkzK4yQtWLOF0",
@@ -581,9 +605,104 @@
         let inventory = [];
         let revenueChartInstance = null;
 
-        // DỮ LIỆU CV
         let cvAccumulations = [];
         let cvMonthlyStats = {};
+
+        let hasShownEventPopup = false; 
+
+        function checkAndShowEvents() {
+            if (hasShownEventPopup) return;
+
+            const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+            const currentYear = new Date().getFullYear();
+            let birthdays = [];
+            let anniversaries = [];
+
+            for (let phone in customers) {
+                const c = customers[phone];
+                if (c.birthday) {
+                    const parts = c.birthday.split('-');
+                    if (parts.length >= 2 && parts[1] === currentMonth) {
+                        birthdays.push({ ...c, phone });
+                    }
+                }
+                if (c.anniversary) {
+                    const parts = c.anniversary.split('-');
+                    if (parts.length >= 3 && parts[1] === currentMonth) {
+                        const anniYear = parseInt(parts[0], 10);
+                        const yearsPassed = currentYear - anniYear;
+                        
+                        if (yearsPassed >= 1) {
+                            anniversaries.push({ ...c, phone, yearsPassed });
+                        }
+                    }
+                }
+            }
+
+            if (birthdays.length === 0 && anniversaries.length === 0) {
+                hasShownEventPopup = true; 
+                return;
+            }
+
+            let contentHtml = '';
+
+            if (birthdays.length > 0) {
+                contentHtml += `
+                    <div>
+                        <h4 class="text-xs font-bold text-[#EE6457] uppercase mb-3 flex items-center gap-2 border-b border-[#F9C4BA]/50 pb-2">
+                            <i class="fa-solid fa-cake-candles"></i> Khách hàng có sinh nhật
+                        </h4>
+                        <ul class="space-y-3">
+                            ${birthdays.map(c => `
+                                <li class="flex justify-between items-center bg-[#FDF5F4] p-3 rounded-xl border border-[#F9C4BA] shadow-sm">
+                                    <div>
+                                        <p class="font-bold text-[#034C5F] text-sm">${c.name}</p>
+                                        <p class="text-xs text-slate-500"><i class="fa-solid fa-phone mr-1 text-[10px] text-[#97BEC6]"></i>${c.phone}</p>
+                                    </div>
+                                    <div class="text-xs font-black text-[#EE6457] bg-white px-3 py-1.5 rounded-lg border border-[#F9C4BA] shadow-inner">
+                                        ${c.birthday.split('-').reverse().join('/')}
+                                    </div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (anniversaries.length > 0) {
+                contentHtml += `
+                    <div class="${birthdays.length > 0 ? 'mt-6' : ''}">
+                        <h4 class="text-xs font-bold text-[#034C5F] uppercase mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <i class="fa-solid fa-calendar-check text-[#97BEC6]"></i> Ngày Kỉ Niệm
+                        </h4>
+                        <ul class="space-y-3">
+                            ${anniversaries.map(c => `
+                                <li class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm">
+                                    <div>
+                                        <p class="font-bold text-[#034C5F] text-sm">${c.name}</p>
+                                        <p class="text-xs text-slate-500"><i class="fa-solid fa-phone mr-1 text-[10px] text-[#97BEC6]"></i>${c.phone}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-[10px] font-black text-[#EE6457] mb-1">Kỉ niệm ${c.yearsPassed} năm</div>
+                                        <div class="text-xs font-black text-[#034C5F] bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-inner inline-block">
+                                            ${c.anniversary.split('-').reverse().join('/')}
+                                        </div>
+                                    </div>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            document.getElementById('eventModalContent').innerHTML = contentHtml;
+            document.getElementById('eventModal').classList.remove('hidden');
+            hasShownEventPopup = true; 
+        }
+
+        function closeEventModal() {
+            document.getElementById('eventModal').classList.add('hidden');
+        }
 
         userRef.on('value', (snapshot) => {
             const data = snapshot.val() || {};
@@ -599,7 +718,6 @@
 
             inventory = data.v11_inventory || [];
             
-            // LOAD DATA CV
             cvAccumulations = data.v11_cv_accumulations || [];
             cvMonthlyStats = data.v11_cv_monthly || {};
 
@@ -615,13 +733,14 @@
             if(!document.getElementById('view-cv').classList.contains('hidden')) {
                 renderAllCV();
             }
+
+            checkAndShowEvents();
         });
 
         const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
         
-        // HÀM FORMAT SỐ CÓ DẤU PHẨY (,) NHƯ YÊU CẦU
         function formatCurrencyInput(input) {
-            let value = input.value.replace(/\D/g, ""); // Chỉ lấy số
+            let value = input.value.replace(/\D/g, ""); 
             if (value !== "") {
                 input.value = new Intl.NumberFormat('en-US').format(value);
             } else {
@@ -661,7 +780,6 @@
             reader.readAsText(file);
         }
 
-        // --- CÁC HÀM CŨ GIỮ NGUYÊN KHÔNG ĐỔI ---
         function saveInventory() { userRef.child('v11_inventory').set(inventory); }
         function addInventoryProduct() {
             const name = document.getElementById('invName').value.trim();
@@ -942,8 +1060,23 @@
             tbody.innerHTML = keys.map((phone, index) => {
                 const c = customers[phone]; if(!c) return ""; 
                 const currentStatus = c.status || 'Vãn lai'; const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
-                return `<tr><td class="p-3 text-center font-bold text-slate-400">${index + 1}</td><td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td><td class="p-3">${phone}</td><td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457]"></td><td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td><td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td><td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td><td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td><td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td></tr>`;
+                
+                return `<tr><td class="p-3 text-center font-bold text-slate-400">${index + 1}</td><td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td><td class="p-3">${phone}</td><td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td><td class="p-3"><input type="date" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer hover:bg-white/50 flatpickr-date"></td><td class="p-3"><input type="date" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input text-[#EE6457] cursor-pointer hover:bg-white/50 flatpickr-date"></td><td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td><td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td><td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td><td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td><td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td></tr>`;
             }).join('');
+
+            // Kích hoạt Flatpickr cho các ô Sinh nhật và Kỉ niệm
+            if (typeof flatpickr !== "undefined") {
+                flatpickr(".flatpickr-date", {
+                    dateFormat: "Y-m-d",
+                    disableMobile: true, // Kích hoạt giao diện cuộn chọn cực nhanh trên điện thoại
+                    allowInput: true,
+                    locale: "vn",
+                    onChange: function(selectedDates, dateStr, instance) {
+                        // Tự động trigger sự kiện lưu sau khi chọn trên giao diện picker mới
+                        instance.element.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
         }
         function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
         function deleteCustomer(p) { if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) { delete customers[p]; saveCRM(); } }
@@ -958,9 +1091,6 @@
         function exportCustomersToExcel() { let csv = "\ufeffTên,SĐT,Địa Chỉ,Sinh Nhật,Ngày Kỉ Niệm,Công Việc,Tình Trạng,Ghi Chú,Tổng Chi\n"; Object.keys(customers).forEach(p => { const c = customers[p]; const totalSpend = orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0); csv += `"${c.name}","${p}","${c.address || ''}","${c.birthday || ''}","${c.anniversary || ''}","${c.job || ''}","${c.status || ''}","${c.note || ''}","${totalSpend}"\n`; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "KhachHang.csv"; link.click(); }
         function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
 
-        // ==========================================
-        // KHỐI JAVASCRIPT CHO THỐNG KÊ CV (CẬP NHẬT)
-        // ==========================================
         function saveCVSync() {
             userRef.update({
                 'v11_cv_accumulations': cvAccumulations,
@@ -974,7 +1104,6 @@
             renderCVSummary();
         }
 
-        // BẢNG 1: TÍCH LŨY (THÊM / CẬP NHẬT)
         function addCVAccumulation() {
             let amtInput = document.getElementById('cvAccAmount').value;
             let amount = parseCurrency(amtInput);
@@ -986,7 +1115,6 @@
             if (!amount || !date) return showToast("Vui lòng nhập số tiền và ngày tích!");
 
             if(editId) {
-                // Sửa dòng đã tồn tại
                 let idx = cvAccumulations.findIndex(a => a.id == editId);
                 if(idx !== -1) {
                     cvAccumulations[idx].amount = amount;
@@ -997,7 +1125,6 @@
                 document.getElementById('editCvAccId').value = "";
                 document.getElementById('btnSaveCVAcc').innerText = "THÊM";
             } else {
-                // Thêm mới
                 cvAccumulations.push({
                     id: Date.now(),
                     amount: amount,
@@ -1008,12 +1135,10 @@
                 });
             }
 
-            // Reset form
             document.getElementById('cvAccAmount').value = '';
             document.getElementById('cvAccDate').value = '';
             document.getElementById('cvAccNote').value = '';
 
-            // Sắp xếp lại theo ngày mới nhất
             cvAccumulations.sort((a,b) => new Date(b.date) - new Date(a.date));
 
             saveCVSync();
@@ -1030,7 +1155,6 @@
             document.getElementById('cvAccMethod').value = acc.method;
             document.getElementById('cvAccNote').value = acc.note || '';
             document.getElementById('btnSaveCVAcc').innerText = "CẬP NHẬT";
-            // Kéo lên trên form
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -1079,7 +1203,6 @@
             `).join('');
         }
 
-        // BẢNG 2: THEO THÁNG (THÊM / CẬP NHẬT)
         function getSumAccumulationForMonth(yyyy_mm) {
             return cvAccumulations.reduce((sum, acc) => {
                 if (acc.date && acc.date.startsWith(yyyy_mm)) return sum + acc.amount;
@@ -1088,7 +1211,7 @@
         }
 
         function saveCVMonthlyStat() {
-            let monthPick = document.getElementById('cvMonthPick').value; // format: YYYY-MM
+            let monthPick = document.getElementById('cvMonthPick').value;
             let cv = parseCurrency(document.getElementById('cvMonthCV').value);
             let importAmt = parseCurrency(document.getElementById('cvMonthImport').value);
             let note = document.getElementById('cvMonthNote').value;
@@ -1101,7 +1224,6 @@
                 note: note
             };
 
-            // Reset
             document.getElementById('cvMonthCV').value = '';
             document.getElementById('cvMonthImport').value = '';
             document.getElementById('cvMonthNote').value = '';
@@ -1120,7 +1242,6 @@
             document.getElementById('cvMonthImport').value = new Intl.NumberFormat('en-US').format(stat.importAmt || 0);
             document.getElementById('cvMonthNote').value = stat.note || '';
             document.getElementById('btnSaveCVMonth').innerText = "CẬP NHẬT";
-            // Kéo view lên form nhập
             document.getElementById('cvMonthPick').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
@@ -1135,13 +1256,12 @@
         function renderCVMonthlyStats() {
             const tbody = document.getElementById('cvMonthTableBody');
             
-            // Lấy tất cả các tháng từ cvMonthlyStats và từ cvAccumulations để render đủ
             let allMonths = new Set(Object.keys(cvMonthlyStats));
             cvAccumulations.forEach(acc => {
                 if(acc.date) allMonths.add(acc.date.substring(0,7));
             });
 
-            let sortedMonths = Array.from(allMonths).sort((a,b) => b.localeCompare(a)); // Mới nhất lên đầu
+            let sortedMonths = Array.from(allMonths).sort((a,b) => b.localeCompare(a));
 
             tbody.innerHTML = sortedMonths.map(month => {
                 let stat = cvMonthlyStats[month] || { cv: 0, importAmt: 0, note: '' };
@@ -1167,7 +1287,6 @@
             }).join('');
         }
 
-        // BẢNG 3: TỔNG HỢP (Lọc)
         function initCVSummaryFilters() {
             let yearSelect = document.getElementById('cvSumYear');
             let currentYear = new Date().getFullYear();
@@ -1186,7 +1305,6 @@
             let totalAcc = 0;
             let totalImport = 0;
 
-            // Tính Tổng Tiền Tích (Quét mảng cvAccumulations)
             cvAccumulations.forEach(acc => {
                 if(!acc.date) return;
                 let [y, m, d] = acc.date.split('-');
@@ -1195,7 +1313,6 @@
                 }
             });
 
-            // Tính Tổng CV & Tổng Nhập (Quét object cvMonthlyStats)
             for (let monthKey in cvMonthlyStats) {
                 let [y, m] = monthKey.split('-');
                 if( (yFilter === 'all' || y === yFilter) && (mFilter === 'all' || m === mFilter) ) {
@@ -1212,30 +1329,25 @@
             document.getElementById('sumRemain').innerText = formatMoney(remain);
         }
 
-            // BẢNG 4: XUẤT EXCEL THỐNG KÊ CV
         function exportCVToExcel() {
             let csv = "\ufeffTháng,Tổng tiền tích (Tự động),CV,Tổng tiền nhập,Còn Lại Chưa Nâng,Ghi chú\n";
             
-            // Lấy danh sách tất cả các tháng
             let allMonths = new Set(Object.keys(cvMonthlyStats));
             cvAccumulations.forEach(acc => {
                 if(acc.date) allMonths.add(acc.date.substring(0,7));
             });
             let sortedMonths = Array.from(allMonths).sort((a,b) => b.localeCompare(a));
 
-            // Đổ dữ liệu vào CSV
             sortedMonths.forEach(month => {
                 let stat = cvMonthlyStats[month] || { cv: 0, importAmt: 0, note: '' };
                 let totalAcc = getSumAccumulationForMonth(month);
                 let remaining = totalAcc - stat.importAmt;
                 
-                // Xử lý chuỗi ghi chú để tránh lỗi dấu phẩy trong file CSV
                 let note = stat.note ? stat.note.replace(/"/g, '""') : '';
                 
                 csv += `"${month}","${totalAcc}","${stat.cv}","${stat.importAmt}","${remaining}","${note}"\n`;
             });
 
-            // Tạo và tải file
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
             link.download = `Thong_Ke_CV_${new Date().toISOString().slice(0,10)}.csv`;
@@ -1243,7 +1355,6 @@
             showToast("Đã xuất file Excel thống kê CV!");
         }
 
-        // Init App
         document.getElementById('orderDate').valueAsDate = new Date();
         document.getElementById('shipDate').valueAsDate = new Date(); 
         document.getElementById('cvAccDate').valueAsDate = new Date();
