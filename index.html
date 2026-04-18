@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Shop Manager Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -17,6 +21,11 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
+    /* Ép tất cả các thành phần trên web dùng font độc lập, bỏ qua font hệ thống */
+html, body, div, p, span, h1, h2, h3, h4, h5, h6, input, button, table, td, th {
+    font-family: 'Be Vietnam Pro', sans-serif !important;
+}
+
     /* ========================================================
    HIỆU ỨNG KÍNH CHO FORM ĐĂNG NHẬP (MSNV)
    ======================================================== */
@@ -314,6 +323,18 @@ table tbody tr:hover {
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Be Vietnam Pro"', 'sans-serif'],
+        }
+      }
+    }
+  }
+</script>
+
 <body class="pb-24">
     <div id="loginModal" class="fixed inset-0 bg-[#034C5F]/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
         <div class="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl border-[4px] border-[#F9C4BA] text-center transform transition-all">
@@ -1486,7 +1507,7 @@ function downloadImage() {
             invoice.style.paddingBottom = originalPadding || '';
             showToast("Có lỗi xảy ra khi lưu ảnh!");
         });
-    }, 300); // Đợi 300 mili-giây
+    }, 200); // Đợi 200 mili-giây
 }
 function openInvoice(id) { 
     const o = orders.find(x => x.id === id); 
@@ -1507,7 +1528,7 @@ function openInvoice(id) {
                 <div style="text-align: left;">
                     <p style="font-weight:800; font-size:16px; margin:0; color:#034C5F; line-height: 2.0; padding-bottom: 2px;">${o.customer.name}</p> 
                     <p style="color:#44; font-size:13px; margin:3px 0; line-height: 1.4;">${o.customer.phone}</p> 
-                    <p style="color:#44; font-size:11px; margin:0; max-width:200px; line-height: 2.0;">${o.customer.addr}</p> 
+                    <p style="color:#44; font-size:11px; margin:0; max-width:200px; line-height: 1.5;">${o.customer.addr}</p> 
                 </div> 
                 <div style="text-align:right; font-size:11px; color:#64748b; line-height: 2.3;"> 
                     <p style="margin:0;">Ngày đặt: <b style="display:inline-block; padding-bottom:1px;">${(o.orderDate || o.date).split('-').reverse().join('/')}</b></p> 
