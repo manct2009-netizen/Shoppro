@@ -1444,27 +1444,106 @@ table tbody tr:hover {
             <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:4px;"><span>Vận chuyển:</span><span>+ ${formatMoney(o.shipFee)}</span></div> <div style="display:flex; justify-content:space-between; font-size:12px; color:#EE6457; margin-bottom:10px;"><span>Giảm giá:</span><span>- ${o.discount.val}${o.discount.type==='percent'?'%':'₫'}</span></div> <div style="display:flex; justify-content:space-between; font-weight:900; font-size:28px; color:#034C5F;"><span>TỔNG THU:</span><span>${formatMoney(o.total)}</span></div> </div> <div style="text-align:center; padding-top:10px; border-top:1px dashed #F9C4BA;"> <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p> <p style="font-size:10px; color:#97BEC6; margin-top:4px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p> </div> </div>`; document.getElementById('invoiceModal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
         // Tìm hàm này trong code của bạn và thay thế phần cấu hình
-function downloadInvoiceImage() {
+function downloadImage() {
     const invoice = document.getElementById('invoiceContent');
-    // Thêm một chút padding phía dưới để tránh mất chữ khi render
-    invoice.style.paddingBottom = "20px"; 
+    const modal = document.getElementById('invoiceModal');
+    
+    // Lưu lại style gốc
+    const originalOverflow = invoice.style.overflow;
+    const originalPadding = invoice.style.paddingBottom;
 
-    html2canvas(invoice, {
-        scale: 2, // Tăng độ nét
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        windowWidth: invoice.scrollWidth,
-        windowHeight: invoice.scrollHeight
-    }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `HoaDon_${document.getElementById('invNum').innerText}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        invoice.style.paddingBottom = "0px"; // Trả lại ban đầu
-        showToast("Đã lưu ảnh hóa đơn!");
-    });
+    // 1. Tạm thời bỏ overflow hidden và nới rộng đáy để html2canvas không cắt nhầm
+    invoice.style.overflow = 'visible';
+    invoice.style.paddingBottom = "30px";
+
+    // 2. Cuộn modal lên trên cùng để tránh lỗi lệch tọa độ Y
+    modal.scrollTop = 0;
+
+    // 3. Dùng setTimeout để đợi trình duyệt vẽ xong layout và font chữ
+    setTimeout(() => {
+        html2canvas(invoice, {
+            scale: 3, // Tăng lên 3 để ảnh xuất ra cực nét, không bị vỡ chữ
+            useCORS: true,
+            logging: false,
+            backgroundColor: "#ffffff",
+            scrollY: 0, // Bắt buộc phải có: Reset tọa độ cuộn
+            scrollX: 0,
+            allowTaint: true
+        }).then(canvas => {
+            const link = document.createElement('a');
+            const timeStr = new Date().getTime(); // Đặt tên file theo thời gian để không trùng
+            link.download = `HoaDon_${timeStr}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+
+            // Trả lại giao diện như cũ
+            invoice.style.overflow = originalOverflow || '';
+            invoice.style.paddingBottom = originalPadding || '';
+            showToast("Đã lưu ảnh hóa đơn thành công!");
+        }).catch(err => {
+            console.error("Lỗi xuất ảnh:", err);
+            invoice.style.overflow = originalOverflow || '';
+            invoice.style.paddingBottom = originalPadding || '';
+            showToast("Có lỗi xảy ra khi lưu ảnh!");
+        });
+    }, 300); // Đợi 300 mili-giây
 }
+function openInvoice(id) { 
+    const o = orders.find(x => x.id === id); 
+    
+    // Đã thêm line-height và padding cho phần ghi chú
+    const noteHtml = o.note ? `
+        <div style="padding:15px; background:#FDF5F4; border-radius:12px; font-size:12px; color:#034C5F; margin:15px 0; border:1px solid #F9C4BA; line-height: 1.5; text-align: left;">
+            <b style="color:#EE6457;">Ghi chú:</b> <span style="display:inline-block; padding-bottom:2px;">${o.note}</span>
+        </div>` : '<div style="margin-top:20px"></div>'; 
+        
+    document.getElementById('invoiceContent').innerHTML = ` 
+        <div style="padding:40px 30px; text-align:center; background:white;">
+            <h1 style="margin:0; font-size:32px; font-weight:900; color:#034C5F; letter-spacing:1px; line-height: 1.2;">HÓA ĐƠN</h1>
+            <p style="margin:8px 0 0 0; color:#EE6457; font-size:14px; font-weight:600; line-height: 1.5;">🌷 Mọi sản phẩm gửi đi là cả tấm lòng 🌷</p> 
+        </div> 
+        <div style="padding:0 20px 10px 20px; background:white;"> 
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #f1f5f9; padding-bottom:15px; margin-bottom:10px;"> 
+                <div style="text-align: left;">
+                    <p style="font-weight:800; font-size:16px; margin:0; color:#034C5F; line-height: 2.0; padding-bottom: 2px;">${o.customer.name}</p> 
+                    <p style="color:#44; font-size:13px; margin:3px 0; line-height: 1.4;">${o.customer.phone}</p> 
+                    <p style="color:#44; font-size:11px; margin:0; max-width:200px; line-height: 2.0;">${o.customer.addr}</p> 
+                </div> 
+                <div style="text-align:right; font-size:11px; color:#64748b; line-height: 2.3;"> 
+                    <p style="margin:0;">Ngày đặt: <b style="display:inline-block; padding-bottom:1px;">${(o.orderDate || o.date).split('-').reverse().join('/')}</b></p> 
+                    <p style="margin:0;">Ngày gửi: <b style="display:inline-block; padding-bottom:1px;">${o.date.split('-').reverse().join('/')}</b></p> 
+                    <p style="margin:0;">Dự Kiến Nhận: <b style="display:inline-block; padding-bottom:1px;">${o.deliveryDate.split('-').reverse().join('/')}</b></p> 
+                    <p style="color:#EE6457; font-weight:800; margin-top:5px; text-transform:uppercase; line-height: 1.8;">${o.payMethod}</p> 
+                </div> 
+            </div> 
+            
+            <table style="width:100%; border-collapse:collapse; font-size:13px; line-height: 2.0;"> 
+                ${o.products.map(p => `<tr><td style="padding:10px 0; border-bottom:1px solid #f8fafc; text-align: left;">${p.name} (x${p.qty})</td><td style="text-align:right; font-weight:700; color:#034C5F;">${formatMoney(p.price*p.qty)}</td></tr>`).join('')} 
+            </table> 
+            
+            ${noteHtml} 
+            
+            <div style="border-top:2px solid #034C5F; padding-top:15px; margin-bottom:20px;"> 
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:4px; line-height: 1.5;">
+                    <span>Vận chuyển:</span><span>+ ${formatMoney(o.shipFee)}</span>
+                </div> 
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#EE6457; margin-bottom:10px; line-height: 1.5;">
+                    <span>Giảm giá:</span><span>- ${o.discount.val}${o.discount.type==='percent'?'%':'₫'}</span>
+                </div> 
+                <div style="display:flex; justify-content:space-between; font-weight:900; font-size:28px; color:#034C5F; line-height: 1.2; align-items: center;">
+                    <span style="font-size: 16px;">TỔNG THU:</span><span style="padding-bottom: 4px;">${formatMoney(o.total)}</span>
+                </div> 
+            </div> 
+            
+            <div style="text-align:center; padding-top:15px; border-top:1px dashed #F9C4BA;"> 
+                <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0; line-height: 1.5;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p> 
+                <p style="font-size:10px; color:#97BEC6; margin-top:4px; line-height: 1.5; padding-bottom: 10px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p> 
+            </div> 
+        </div>`; 
+        
+    document.getElementById('invoiceModal').classList.remove('hidden'); 
+}
+
   function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); const today = new Date(); document.getElementById('exportStartDate').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; document.getElementById('exportEndDate').value = today.toISOString().split('T')[0]; document.getElementById('exportFileName').value = `Don_Hang_Thang_${today.getMonth()+1}`; }
         function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
         function confirmExport() { const fileName = document.getElementById('exportFileName').value.trim() || `Export_${Date.now()}`; const s = document.getElementById('exportStartDate').value; const e = document.getElementById('exportEndDate').value; const data = orders.filter(o => { const targetDate = o.orderDate || o.date; return (!s || targetDate >= s) && (!e || targetDate <= e) }); let csv = "\ufeffMã Đơn,Ngày Đặt,Ngày Gửi,Ngày Giao,Tên,SĐT,Sản Phẩm,Tổng Tiền\n"; data.forEach(o => csv += `${o.id},${o.orderDate || o.date},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal(); }
