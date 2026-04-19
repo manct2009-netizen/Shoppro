@@ -487,15 +487,16 @@ table tbody tr:hover {
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
                         <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
-                            <tr>
-                                <th class="p-4">Khách hàng</th>
-                                <th class="p-4">Sản phẩm</th>
-                                <th class="p-4 text-center">Ngày gửi</th>
-                                <th class="p-4 text-center">Trạng thái</th>
-                                <th class="p-4 text-right">Tổng thu</th>
-                                <th class="p-4 text-center">Thao tác</th>
-                            </tr>
-                        </thead>
+    <tr>
+        <th class="p-4">Khách hàng</th>
+        <th class="p-4">Sản phẩm</th>
+        <th class="p-4 text-center">Ngày gửi</th>
+        <th class="p-4 text-center">Thanh toán</th> <th class="p-4 text-center">Trạng thái</th>
+        <th class="p-4 text-right">Tổng thu</th>
+        <th class="p-4 text-center">Đã thu</th> <th class="p-4 text-center">Thao tác</th>
+    </tr>
+</thead>
+
                         <tbody id="orderTableBody" class="divide-y divide-[#F9C4BA]/20"></tbody>
                     </table>
                 </div>
@@ -553,8 +554,10 @@ table tbody tr:hover {
                     </div>
                 </div>
 
+            
+
                 <div class="bg-white p-6 rounded-[40px] border-2 border-[#F9C4BA] text-center shadow-inner relative overflow-hidden flex flex-col justify-center">
-                    <p class="text-[#97BEC6] text-xs font-bold uppercase tracking-[0.3em]">Tổng doanh thu giai đoạn</p>
+                    <p class="text-[#97BEC6] text-xs font-bold uppercase tracking-[0.3em]">Tổng SALE</p>
                     <h2 class="text-4xl font-black mt-2 text-[#034C5F]" id="totalPeriodRevenue">0 ₫</h2>
                     <div class="grid grid-cols-2 gap-4 mt-4 max-w-md mx-auto border-t border-slate-100 pt-4">
                         <div>
@@ -568,7 +571,31 @@ table tbody tr:hover {
                    </div>
                 </div>
             </div>
-        </div>
+       
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                <div class="card p-6 border-l-8 border-emerald-500 bg-white-50/30">
+                    <h3 class="font-bold text-emerald-600 text-sm uppercase mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-money-check-dollar"></i> DS Đã Thu
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-white-100 pb-2">
+                            
+                            <span class="text-3xl font-black text-emerald-700" id="statCollected">0 ₫</span>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="card p-6 border-l-8 border-emerald-500 bg-white-50/30">
+                    <h3 class="font-bold text-emerald-600 text-sm uppercase mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-sack-dollar"></i> Thu Nhập 
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-white-100 pb-2">
+                            <span class="text-xs text-emerald-600 font-bold"> </span>
+                            <span class="text-3xl font-black text-emerald-700" id="statIncome">0 ₫</span>
+                        </div>
+                    </div>
+           
 
         <div id="view-inventory" class="hidden space-y-6">
              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -961,7 +988,7 @@ table tbody tr:hover {
             "Đợi gửi": "bg-slate-100 text-slate-600", 
             "Đang giao": "bg-blue-100 text-blue-700", 
             "Thành công ✅": "bg-green-100 text-green-700",
-            "Đơn BOM 💣": "bg-red-800 text-white",
+            "Đơn BOM 💣": "bg-red-600 text-white",
             "HD Sử dụng": "bg-indigo-100 text-indigo-700", 
             "Chăm sóc": "bg-emerald-100 text-emerald-700", 
             "Xử lý": "bg-amber-100 text-amber-700", 
@@ -1236,7 +1263,7 @@ table tbody tr:hover {
 
             const { subtotal, total } = calculateTotal();
             const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
-            const order = { 
+                        const order = { 
                 id, timestamp: isEdit ? orders.find(x=>x.id==id).timestamp : Date.now(), 
                 customer: { name, phone, addr, type }, products, 
                 payMethod: document.getElementById('payMethod').value, 
@@ -1246,8 +1273,10 @@ table tbody tr:hover {
                 date: document.getElementById('shipDate').value, 
                 deliveryDate: document.getElementById('deliveryDate').value, 
                 note: document.getElementById('orderNote').value.trim(), subtotal, total, 
-                status: isEdit ? orders.find(x => x.id == id).status : "Đợi gửi" 
+                status: isEdit ? orders.find(x => x.id == id).status : "Đợi gửi",
+                isPaid: isEdit ? (orders.find(x => x.id == id).isPaid || false) : false // THÊM DÒNG NÀY
             };
+
             if(isEdit) orders[orders.findIndex(o => o.id == id)] = order; else orders.unshift(order);
             userRef.update({ 'v11_orders': orders, 'v11_customers': customers, 'v11_inventory': inventory });
             resetForm(); showToast("Đã lưu đồng bộ thành công!");
@@ -1276,8 +1305,18 @@ table tbody tr:hover {
                 const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search);
                 return dateMatch && typeMatch && searchMatch;
             });
-            document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
+                        document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
                 const formattedShipDate = o.date ? o.date.split('-').reverse().join('/') : '';
+                
+                // Xử lý viết tắt hình thức thanh toán
+                let shortPayMethod = "COD";
+                if (o.payMethod === "Chuyển khoản") shortPayMethod = "CK";
+                else if (o.payMethod === "Tiền mặt") shortPayMethod = "TM";
+
+                // Xử lý giao diện nút Đã Thu
+                let paidBg = o.isPaid ? "bg-green-500 border-green-600" : "bg-slate-100 border-slate-200";
+                let paidIconColor = o.isPaid ? "text-white" : "text-slate-300";
+
                 return `
                 <tr class="hover:bg-[#FDF5F4]/50 transition-colors">
                     <td class="p-4">
@@ -1298,8 +1337,16 @@ table tbody tr:hover {
                             <i class="fa-solid fa-truck-fast mr-1"></i>${formattedShipDate}
                         </span>
                     </td>
+                    <td class="p-4 text-center font-black text-[#034C5F] text-xs">
+                        ${shortPayMethod}
+                    </td>
                     <td class="p-4 text-center"><button onclick="updateStatus(${o.id})" class="status-badge ${STATUS_COLORS[o.status]}">${o.status}</button></td>
                     <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="togglePaidStatus(${o.id})" class="w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${paidBg} ${paidIconColor} hover:scale-110 shadow-sm mx-auto" title="Đánh dấu đã thu tiền">
+                            <i class="fa-solid fa-check text-sm"></i>
+                        </button>
+                    </td>
                     <td class="p-4 text-center">
                         <div class="flex justify-center gap-3">
                             <button onclick="openInvoice(${o.id})" class="text-[#97BEC6] hover:text-[#034C5F]"><i class="fa-solid fa-receipt text-lg"></i></button>
@@ -1309,10 +1356,12 @@ table tbody tr:hover {
                     </td>
                 </tr>`;
             }).join('');
+
         }
-        function renderAnalytics() {
+                function renderAnalytics() {
             const start = document.getElementById('filterStart').value;
             const end = document.getElementById('filterEnd').value;
+            
             let validOrders = orders.filter(o => {
                 const targetDate = o.orderDate || o.date;
                 return o.status !== "Đã Hủy" && o.status !== "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
@@ -1321,11 +1370,20 @@ table tbody tr:hover {
                 const targetDate = o.orderDate || o.date;
                 return o.status === "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
             });
+
             let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
+            let sCollected = 0; // Thêm biến lưu Đã Thu
             let dailyRevenue = {}; 
+
             validOrders.forEach(o => {
-                const net = o.total - o.shipFee;
-                grandTotal += net;
+                const net = o.total - o.shipFee; // Lợi nhuận không tính ship
+                grandTotal += net;               // Doanh thu tổng giữ nguyên
+                
+                // CỘNG VÀO ĐÃ THU NẾU ĐƠN CÓ TÍCH XANH (isPaid = true)
+                if(o.isPaid) {
+                    sCollected += net;
+                }
+
                 const targetDate = o.orderDate || o.date;
                 if(dailyRevenue[targetDate]) dailyRevenue[targetDate] += net; else dailyRevenue[targetDate] = net;
                 o.products.forEach(p => {
@@ -1334,14 +1392,37 @@ table tbody tr:hover {
                 });
                 if(o.customer.type === 'ttd') sTtd += net; else sNew += net;
             });
+            
             let bomTotalValue = bomOrders.reduce((sum, o) => sum + o.total, 0);
-            document.getElementById('statOut').innerText = formatMoney(sOut); document.getElementById('statVnl').innerText = formatMoney(sVnl);
-            document.getElementById('statNew').innerText = formatMoney(sNew); document.getElementById('statTtd').innerText = formatMoney(sTtd);
-            document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal); document.getElementById('statTotalOrders').innerText = validOrders.length;
+
+            // TÍNH TỔNG TIỀN TÍCH LŨY TRONG GIAI ĐOẠN ĐƯỢC CHỌN LỌC
+            let sAccumulated = 0;
+            cvAccumulations.forEach(acc => {
+                if (acc.date && (!start || acc.date >= start) && (!end || acc.date <= end)) {
+                    sAccumulated += acc.amount;
+                }
+            });
+
+            // THU NHẬP = ĐÃ THU - TÍCH LŨY
+            let sIncome = sCollected - sAccumulated;
+
+            document.getElementById('statOut').innerText = formatMoney(sOut); 
+            document.getElementById('statVnl').innerText = formatMoney(sVnl);
+            document.getElementById('statNew').innerText = formatMoney(sNew); 
+            document.getElementById('statTtd').innerText = formatMoney(sTtd);
+            document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal); 
+            document.getElementById('statTotalOrders').innerText = validOrders.length;
             document.getElementById('statAvgOrder').innerText = validOrders.length ? formatMoney(grandTotal/validOrders.length) : '0 ₫';
-            document.getElementById('statBomCount').innerText = bomOrders.length; document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
+            document.getElementById('statBomCount').innerText = bomOrders.length; 
+            document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
+            
+            // XUẤT RA GIAO DIỆN MỚI
+            document.getElementById('statCollected').innerText = formatMoney(sCollected);
+            document.getElementById('statIncome').innerText = formatMoney(sIncome);
+
             drawRevenueChart(dailyRevenue);
         }
+
         function drawRevenueChart(dataObj) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
             const sortedDates = Object.keys(dataObj).sort();
@@ -1360,6 +1441,14 @@ table tbody tr:hover {
             document.getElementById('nameDataList').innerHTML = Object.keys(customers).map(p => `<option value="${customers[p].name}">${p}</option>`).join('');
         }
         function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; userRef.child('v11_orders').set(orders); }
+    function togglePaidStatus(id) {
+    const o = orders.find(x => x.id === id);
+    if(o) {
+        o.isPaid = !o.isPaid;
+        userRef.child('v11_orders').set(orders);
+    }
+}
+
         function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); userRef.child('v11_orders').set(orders); } }
         function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
         
