@@ -321,6 +321,29 @@ table tbody tr:hover {
 
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Textarea cho bảng khách hàng - Bỏ khung xanh, tự động xuống dòng */
+.crm-textarea {
+    background: transparent !important;
+    border: 1px dashed transparent !important;
+    box-shadow: none !important;
+    width: 100%;
+    font-size: 13px;
+    padding: 6px;
+    border-radius: 6px;
+    resize: none; /* Ẩn nút kéo giãn mặc định */
+    overflow: hidden; /* Ẩn thanh cuộn */
+    line-height: 1.5;
+    color: #034C5F !important;
+    min-height: 32px;
+}
+
+/* Chỉ hiện viền mờ khi click vào để sửa */
+.crm-textarea:focus {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    outline: none !important;
+}
+
     </style>
 </head>
 <script>
@@ -593,12 +616,13 @@ table tbody tr:hover {
                         <div class="flex justify-between items-end border-b border-white-100 pb-2">
                             <span class="text-xs text-emerald-600 font-bold"> </span>
                             <span class="text-3xl font-black text-emerald-700" id="statIncome">0 ₫</span>
-                      </div>
-                     </div>
+                        </div>
                     </div>
-                   </div>
                  </div>
-          <div id="view-inventory" class="hidden space-y-6">
+              </div>
+            </div>
+
+        <div id="view-inventory" class="hidden space-y-6">
              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="md:col-span-1">
                     <div class="card p-6 bg-[#034C5F] text-white">
@@ -694,24 +718,25 @@ table tbody tr:hover {
                     <button onclick="exportCustomersToExcel()" class="text-[10px] bg-white/20 px-3 py-1 rounded-lg border border-white/30 hover:bg-white/40"><i class="fa-solid fa-download mr-1"></i> Tải CSV</button>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm min-w-[1200px]">
-                        <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
-                            <tr>
-                                <th class="p-4 text-center w-12">STT</th>
-                                <th class="p-4">Tên Khách</th>
-                                <th class="p-4">Số điện thoại</th>
-                                <th class="p-4">Địa chỉ</th>
-                                <th class="p-4"><i class="fa-solid fa-cake-candles mr-1 text-[#EE6457]"></i> Sinh nhật</th>
-                                <th class="p-4"><i class="fa-solid fa-heart mr-1 text-[#EE6457]"></i> Ngày kỉ niệm</th>
-                                <th class="p-4">Công việc</th>
-                                <th class="p-4">Tình trạng</th>
-                                <th class="p-4">Ghi chú</th>
-                                <th class="p-4 text-right">Tổng chi</th>
-                                <th class="p-4 text-center">Xóa</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customerTableBody" class="divide-y divide-[#F9C4BA]/30"></tbody>
-                    </table>
+                    <table class="w-full text-left text-sm min-w-[1600px]">
+    <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
+        <tr>
+            <th class="p-4 text-center w-12">STT</th>
+            <th class="p-4 w-48">Tên Khách</th>
+            <th class="p-4 w-32">Số điện thoại</th>
+            <th class="p-4 w-72">Địa chỉ</th>
+            <th class="p-4 w-32"><i class="fa-solid fa-cake-candles mr-1 text-[#EE6457]"></i> Sinh nhật</th>
+            <th class="p-4 w-32"><i class="fa-solid fa-heart mr-1 text-[#EE6457]"></i> Ngày kỉ niệm</th>
+            <th class="p-4 w-40">Công việc</th>
+            <th class="p-4 w-36">Tình trạng</th>
+            <th class="p-4 w-48">Ghi chú</th>
+            <th class="p-4 text-right w-32">Tổng chi</th>
+            <th class="p-4 text-center w-16">Xóa</th>
+        </tr>
+    </thead>
+    <tbody id="customerTableBody" class="divide-y divide-[#F9C4BA]/30"></tbody>
+</table>
+
                 </div>
             </div>
         </div>
@@ -984,17 +1009,7 @@ table tbody tr:hover {
             }
         });
 
-        const STATUS_OPTIONS = ["Đợi gửi", "Đang giao", "Thành công ✅", "Đơn BOM 💣", "HD Sử dụng", "Chăm sóc", "Xử lý", "Đã Hủy"];
-        const STATUS_COLORS = { 
-            "Đợi gửi": "bg-slate-100 text-slate-600", 
-            "Đang giao": "bg-blue-100 text-blue-700", 
-            "Thành công ✅": "bg-green-100 text-green-700",
-            "Đơn BOM 💣": "bg-red-600 text-white",
-            "HD Sử dụng": "bg-indigo-100 text-indigo-700", 
-            "Chăm sóc": "bg-emerald-100 text-emerald-700", 
-            "Xử lý": "bg-amber-100 text-amber-700", 
-            "Đã Hủy": "bg-red-100 text-red-700" 
-        };
+        
         const OUT_KEYWORDS = ['BND', 'BNĐ', 'NƯỚC HOA', 'SERUM', ];
 
         let orders = [];
@@ -1341,7 +1356,29 @@ table tbody tr:hover {
                     <td class="p-4 text-center font-black text-[#034C5F] text-xs">
                         ${shortPayMethod}
                     </td>
-                    <td class="p-4 text-center"><button onclick="updateStatus(${o.id})" class="status-badge ${STATUS_COLORS[o.status]}">${o.status}</button></td>
+             <td class="p-4 text-center">
+    <select onchange="changeOrderStatus(${o.id}, this.value)" 
+        class="text-[11px] font-bold rounded-full px-3 py-1 cursor-pointer transition-all appearance-none border-none outline-none focus:ring-0"
+        style="
+            background-color: ${getStatusStyles(o.status).bg} !important; 
+            color: ${getStatusStyles(o.status).text} !important;
+            text-align: center;
+            width: auto;
+            min-width: 100px;
+        ">
+        <option value="Đợi gửi" ${o.status === 'Đợi gửi' ? 'selected' : ''} style="background: white; color: #fffff;">Đợi gửi </option>
+        <option value="Đang giao" ${o.status === 'Đang giao' ? 'selected' : ''} style="background: white; color: #1e40af;">Đang giao 🚚</option>
+        <option value="Thành công" ${o.status === 'Thành công' ? 'selected' : ''} style="background: white; color: #065f46;">Thành công ✅</option>
+        <option value="Chăm sóc" ${o.status === 'Chăm sóc' ? 'selected' : ''} style="background: white; color: #5b21b6;">Chăm sóc 💬</option>
+        <option value="HD sử dụng" ${o.status === 'HD sử dụng' ? 'selected' : ''} style="background: white; color: #92400e;">HD sử dụng 📖</option>
+        <option value="Xử lý" ${o.status === 'Xử lý' ? 'selected' : ''} style="background: white; color: #991b1b;">Xử lý ⚙️</option>
+        <option value="Đơn BOM 💣" ${o.status === 'Đơn BOM 💣' ? 'selected' : ''} style="background: white; color: #7f1d1d;">Đơn Bom 💣</option>
+        <option value="Đã Hủy" ${o.status === 'Đã Hủy' ? 'selected' : ''} style="background: white; color: #374151;">Đã Hủy ❌</option>
+    </select>
+</td>
+
+
+
                     <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
                     <td class="p-4 text-center">
                         <button onclick="togglePaidStatus(${o.id})" class="w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${paidBg} ${paidIconColor} hover:scale-110 shadow-sm mx-auto" title="Đánh dấu đã thu tiền">
@@ -1359,6 +1396,31 @@ table tbody tr:hover {
             }).join('');
 
         }
+    
+  function getStatusStyles(status) {
+    const styles = {
+        'Đợi gửi': { bg: '#f1f5f9', text: '#000000' },      // Xám
+        'Đang giao': { bg: '#9ce4ff', text: '#00000' },    // Xanh dương
+        'Thành công': { bg: '#a4ff9c', text: '#00000' },   // Xanh lá
+        'Chăm sóc': { bg: '#00ffe5', text: '#000000' },     // cam
+        'HD sử dụng': { bg: '#fef3c7', text: '#000000' },   // Vàng cam
+        'Xử lý': { bg: '#fee2e2', text: '#000000' },        // Đỏ nhạt
+        'Đơn BOM 💣': { bg: '#fca5a5', text: '#ffffff' },   // Đỏ đậm
+        'Đã Hủy': { bg: '#f3f4f6', text: '#374151' }        // Xám đậm
+    };
+    return styles[status] || { bg: '#ffffff', text: '#000000' };
+}
+
+
+function changeOrderStatus(id, newStatus) {
+    const o = orders.find(x => x.id === id);
+    if (o) {
+        o.status = newStatus;
+        userRef.child('v11_orders').set(orders);
+        // Sau khi lưu Firebase, bảng sẽ tự re-render và đổi màu chữ
+    }
+}
+
                 function renderAnalytics() {
             const start = document.getElementById('filterStart').value;
             const end = document.getElementById('filterEnd').value;
@@ -1441,14 +1503,15 @@ table tbody tr:hover {
             document.getElementById('phoneDataList').innerHTML = Object.keys(customers).map(p => `<option value="${p}">${customers[p].name}</option>`).join('');
             document.getElementById('nameDataList').innerHTML = Object.keys(customers).map(p => `<option value="${customers[p].name}">${p}</option>`).join('');
         }
-        function updateStatus(id) { const o = orders.find(x => x.id === id); o.status = STATUS_OPTIONS[(STATUS_OPTIONS.indexOf(o.status) + 1) % STATUS_OPTIONS.length]; userRef.child('v11_orders').set(orders); }
-    function togglePaidStatus(id) {
+        function changeOrderStatus(id, newStatus) {
     const o = orders.find(x => x.id === id);
-    if(o) {
-        o.isPaid = !o.isPaid;
+    if (o) {
+        o.status = newStatus;
         userRef.child('v11_orders').set(orders);
+        // Lưu ý: Dữ liệu sẽ tự động render lại nhờ hàm lắng nghe Firebase on('value') phía trên.
     }
 }
+
 
         function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); userRef.child('v11_orders').set(orders); } }
         function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
@@ -1494,19 +1557,28 @@ table tbody tr:hover {
                 let isAnniToday = (anniMMDD === todayMMDD);
                 let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
                 
-                return `<tr>
+                                return `<tr>
                     <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
-                    <td class="p-3"><input type="text" value="${c.name}" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-input font-bold text-[#034C5F]"></td>
+                    
+                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-textarea font-bold text-[#034C5F]">${c.name}</textarea></td>
+                    
                     <td class="p-3">${phone}</td>
-                    <td class="p-3"><input type="text" value="${c.address||''}" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-input"></td>
+                    
+                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-textarea">${c.address||''}</textarea></td>
+                    
                     <td class="p-3"><input type="text" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer flatpickr-date ${bdayClass}" placeholder="DD/MM/YYYY"></td>
                     <td class="p-3"><input type="text" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input cursor-pointer flatpickr-date text-[#EE6457] ${anniClass}" placeholder="DD/MM/YYYY"></td>
-                    <td class="p-3"><input type="text" value="${c.job||''}" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-input"></td>
+                    
+                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-textarea">${c.job||''}</textarea></td>
+                    
                     <td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td>
-                    <td class="p-3"><input type="text" value="${c.note||''}" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-input italic"></td>
+                    
+                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-textarea italic text-slate-600">${c.note||''}</textarea></td>
+                    
                     <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
                     <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
+
             }).join('');
 
             if (typeof flatpickr !== "undefined") {
