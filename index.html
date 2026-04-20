@@ -1665,6 +1665,27 @@ function changeOrderStatus(id, newStatus) {
 
 
         function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); userRef.child('v11_orders').set(orders); } }
+           // HÀM ĐÁNH DẤU / HỦY ĐÁNH DẤU ĐÃ THU TIỀN
+        function togglePaidStatus(id) {
+            // Tìm đơn hàng theo ID
+            const orderIndex = orders.findIndex(x => x.id === id);
+            
+            if (orderIndex !== -1) {
+                // Đảo ngược trạng thái (chưa thu -> đã thu, đã thu -> chưa thu)
+                orders[orderIndex].isPaid = !orders[orderIndex].isPaid;
+                
+                // Lưu cập nhật lên Firebase
+                userRef.child('v11_orders').set(orders);
+                
+                // Hiện thông báo popup nhỏ
+                if(orders[orderIndex].isPaid) {
+                    showToast("✅ Đã đánh dấu: ĐÃ THU TIỀN!");
+                } else {
+                    showToast("❌ Đã hủy đánh dấu thu tiền!");
+                }
+            }
+        }
+     
         function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
         
         function switchTab(t) {
