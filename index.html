@@ -2005,6 +2005,11 @@ function openInvoice(id) {
         let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
         document.getElementById('cvMonthPick').value = currentMonthStr;
 
+        // === THÊM 2 DÒNG NÀY ĐỂ SET NGÀY MÙNG 1 CHO Ô "TỪ NGÀY" Ở BÁO CÁO ===
+        let firstDayOfMonth = currentMonthStr + "-01"; 
+        document.getElementById('filterStart').value = firstDayOfMonth;
+        // ===================================================================
+        
         autoSetDeliveryDate(); 
         addProductRow();
     </script>
