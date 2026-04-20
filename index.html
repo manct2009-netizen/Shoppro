@@ -359,26 +359,73 @@ table tbody tr:hover {
 </script>
 
 <body class="pb-24">
-    <div id="loginModal" class="fixed inset-0 bg-[#034C5F]/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
+        <div id="loginModal" class="fixed inset-0 bg-[#034C5F]/95 z-[100] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
         <div class="bg-white rounded-[32px] p-8 w-full max-w-sm shadow-2xl border-[4px] border-[#F9C4BA] text-center transform transition-all">
+            
             <div class="w-20 h-20 bg-[#FDF5F4] text-[#034C5F] rounded-2xl mx-auto flex items-center justify-center text-4xl mb-4 shadow-inner border border-[#F9C4BA]">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h2 class="text-3xl font-black text-[#FFFFFF] tracking-tight uppercase">BND<span class="text-[#ff3300] font-light">Shop</span></h2>
-            <p class="text-[11px] font-bold text-[#6ec2f7] uppercase tracking-widest mt-1 mb-8">Hệ Thống Quản Lý Sale</p>
+            <p class="text-[11px] font-bold text-[#6ec2f7] uppercase tracking-widest mt-1 mb-6">Hệ Thống Quản Lý Sale</p>
             
             <div class="space-y-4">
                 <div class="text-left">
-                    <label class="text-[10px] font-bold text-[#97BEC6] uppercase ml-1">Nhập mã nhân viên của bạn</label>
-                    <input type="text" id="employeeIdInput" onkeydown="if(event.key === 'Enter') handleLogin()" class="w-full mt-1 px-4 py-4 rounded-xl border-2 border-[#FDF5F4] bg-[#FDF5F4] focus:border-[#034C5F] focus:bg-white focus:ring-4 focus:ring-[#034C5F]/10 outline-none text-center font-black text-xl text-[#034C5F] uppercase transition-all shadow-inner" placeholder="VD: 123456, 223672...">
+                    <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Mã nhân viên</label>
+                    <input type="text" id="empCode" class="w-full px-4 py-3 rounded-2xl border-2 border-[#FDF5F4] bg-[#FDF5F4] focus:border-[#034C5F] focus:bg-white outline-none text-center font-black text-xl text-[#034C5F] uppercase transition-all shadow-inner" placeholder="VD: 123456...">
                 </div>
-                <button onclick="handleLogin()" class="w-full py-4 bg-[#EE6457] text-white rounded-xl font-black uppercase text-sm hover:bg-[#d85449] hover:scale-[1.02] transition-all shadow-lg flex items-center justify-center gap-2">
+                
+                <div class="text-left relative">
+                    <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Vui lòng nhập mật khẩu</label>
+                    <input type="password" id="empPassword" onkeydown="if(event.key === 'Enter') handleLogin()" class="w-full px-4 py-3 rounded-2xl border-2 border-[#FDF5F4] bg-[#FDF5F4] focus:border-[#034C5F] focus:bg-white outline-none text-center font-black text-xl text-[#034C5F] transition-all shadow-inner" placeholder="••••••••">
+                    
+                    <div class="text-right mt-1.5 mr-1">
+                        <button type="button" onclick="handleForgotPassword()" class="text-[11px] font-bold text-[#EE6457] hover:text-[#d85449] transition-colors cursor-pointer tracking-wider">
+                            Quên mật khẩu?
+                        </button>
+                    </div>
+                </div>
+                
+                <button onclick="handleLogin()" class="w-full py-4 mt-2 bg-[#EE6457] text-white rounded-2xl font-black uppercase text-sm hover:bg-[#d85449] hover:scale-[1.02] transition-all shadow-lg flex items-center justify-center gap-2">
                     Vào Hệ Thống <i class="fa-solid fa-arrow-right-to-bracket"></i>
                 </button>
             </div>
-            <p class="text-[10px] text-slate-400 mt-6 italic">* Dữ liệu của bạn được đồng bộ tự động theo mã này.</p>
+            
+            <p class="text-[10px] text-slate-400 mt-6 italic">Cung cấp và phát triển bởi © 2026 Duy Khang.</p>
+        </div>
+   </div>
+    <div id="forgotPassModal" class="fixed inset-0 bg-[#034C5F]/95 z-[110] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
+        <div style="background: rgba(186, 230, 253, 0.2); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 2px solid rgba(56, 189, 248, 0.6); border-radius: 28px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(134, 239, 172, 0.3); padding: 2rem;" class="w-full max-w-sm text-center transform transition-all">
+            
+            <div class="w-16 h-16 bg-[#FDF5F4] text-[#EE6457] rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-inner border border-[#F9C4BA]">
+                <i class="fa-solid fa-unlock-keyhole"></i>
+            </div>
+            
+            <h2 class="text-2xl font-black text-[#FFFFFF] tracking-tight uppercase mb-1">Cấp Lại Mật Khẩu</h2>
+            <p class="text-[10px] font-bold text-[#86efac] uppercase tracking-widest mb-6">Xác thực bởi Duy Khang</p>
+            
+            <div class="space-y-4">
+                <div class="text-left">
+                    <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Mã xác thực (Nhà cung cấp)</label>
+                    <input type="password" id="supplierCodeInput" class="w-full px-4 py-3 rounded-2xl border-2 border-[rgba(56,189,248,0.4)] bg-white/90 focus:border-[#86efac] focus:bg-white outline-none text-center font-black text-lg text-[#034C5F] transition-all shadow-inner focus:shadow-[0_0_15px_rgba(56,189,248,0.5)]" placeholder="Nhập mã bí mật...">
+                </div>
+                
+                <div class="text-left relative">
+                    <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Mật khẩu mới</label>
+                    <input type="password" id="newResetPassInput" class="w-full px-4 py-3 rounded-2xl border-2 border-[rgba(56,189,248,0.4)] bg-white/90 focus:border-[#86efac] focus:bg-white outline-none text-center font-black text-lg text-[#034C5F] transition-all shadow-inner focus:shadow-[0_0_15px_rgba(56,189,248,0.5)]" placeholder="Nhập mật khẩu mới">
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button onclick="closeForgotPassModal()" class="flex-1 py-3.5 bg-transparent border border-white/30 text-white rounded-2xl font-black uppercase text-xs hover:bg-white/10 transition-all">
+                        Hủy
+                    </button>
+                    <button onclick="submitForgotPassword()" class="flex-1 py-3.5 bg-gradient-to-r from-[#034C5F] to-[#065a71] border border-white/20 text-white rounded-2xl font-black uppercase text-xs shadow-[0_4px_15px_rgba(3,76,95,0.3)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(134,239,172,0.4)] transition-all">
+                        Xác nhận
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
+
 
     <div id="toast">Thông báo hệ thống</div>
     <datalist id="productDataList"></datalist>
@@ -398,19 +445,52 @@ table tbody tr:hover {
                 <button onclick="switchTab('cv')" id="tab-cv" class="px-3 md:px-4 py-2 rounded-xl text-sm font-medium text-[#034C5F] transition-all"><i class="fa-solid fa-star md:mr-1"></i><span class="hidden md:inline"> Thống kê CV</span></button>
             </nav>
 
+          <div class="relative inline-block text-left" id="settingsMenuContainer">
+    <button onclick="toggleSettingsMenu()" class="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-all shadow-lg border border-white/30">
+        <i class="fa-solid fa-gear text-xl"></i>
+    </button>
+
+    <div id="settingsMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[110] transform origin-top-right transition-all">
+        <div class="py-2">
+            <button onclick="openChangePassModal()" class="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-3 transition-colors">
+                <i class="fa-solid fa-key text-blue-500 w-5"></i> Đổi mật khẩu
+            </button>
+            
+            <button onclick="exportData()" class="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-green-50 flex items-center gap-3 transition-colors border-t border-gray-50">
+                <i class="fa-solid fa-download text-green-500 w-5"></i> Sao lưu dữ liệu
+            </button>
+            
+            <button onclick="document.getElementById('importInput').click()" class="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-orange-50 flex items-center gap-3 transition-colors border-t border-gray-50">
+                <i class="fa-solid fa-upload text-orange-500 w-5"></i> Khôi phục dữ liệu
+            </button>
+            
+            <button onclick="handleLogout()" class="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors border-t border-gray-50 font-bold">
+                <i class="fa-solid fa-right-from-bracket w-5"></i> Đăng xuất
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="changePassModal" class="fixed inset-0 bg-black/60 z-[120] flex items-center justify-center p-4 hidden backdrop-blur-sm">
+    <div class="bg-white rounded-[24px] p-6 w-full max-w-xs shadow-2xl border border-gray-200">
+        <h3 class="text-lg font-bold text-[#034C5F] mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-shield-halved"></i> Đổi mật khẩu mới
+        </h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1 mb-1">Mật khẩu mới</label>
+                <input type="password" id="newPassInput" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 outline-none text-center font-bold" placeholder="Nhập số mới...">
+            </div>
             <div class="flex gap-2">
-                <button onclick="document.getElementById('fileInput').click()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-[#EE6457] hover:text-white transition-all flex items-center justify-center" title="Khôi phục">
-                    <i class="fa-solid fa-upload"></i>
-                </button>
-                <input type="file" id="fileInput" class="hidden" accept=".json" onchange="restoreData(this)">
-                <button onclick="backupData()" class="w-9 h-9 rounded-full bg-slate-100 text-slate-500 hover:bg-[#034C5F] hover:text-white transition-all flex items-center justify-center" title="Sao lưu">
-                    <i class="fa-solid fa-download"></i>
-                </button>
-                <button onclick="handleLogout()" class="w-9 h-9 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center border border-red-100" title="Đăng xuất mã nhân viên">
-                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                </button>
+                <button onclick="closeChangePassModal()" class="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm">Hủy</button>
+                <button onclick="saveNewPassword()" class="flex-1 py-3 bg-[#034C5F] text-white rounded-xl font-bold text-sm">Lưu lại</button>
             </div>
         </div>
+    </div>
+</div>
+
+
+           
     </header>
 
     <main class="container mx-auto p-4 lg:max-w-7xl">
@@ -945,18 +1025,89 @@ table tbody tr:hover {
         let employeeId = localStorage.getItem('v11_employee_id');
         let userRef; // Chuyển biến này ra ngoài
 
+      
+               // --- BẮT ĐẦU PHẦN XỬ LÝ ĐĂNG NHẬP MỚI ---
+        const DEFAULT_PASSWORD = "898989";
+
         // HÀM XỬ LÝ ĐĂNG NHẬP
         function handleLogin() {
-            const inputVal = document.getElementById('employeeIdInput').value.trim();
-            if (inputVal !== "") {
-                const upperId = inputVal.toUpperCase();
+            const code = document.getElementById('empCode').value.trim();
+            const pass = document.getElementById('empPassword').value;
+
+            if (!code) {
+                alert("Vui lòng nhập mã nhân viên!");
+                return;
+            }
+            if (!pass) {
+                alert("Vui lòng nhập mật khẩu!");
+                return;
+            }
+
+            // Kiểm tra mật khẩu (nếu chưa đổi thì lấy mặc định là 898989)
+            const savedPassword = localStorage.getItem(`pass_${code}`) || DEFAULT_PASSWORD;
+
+            if (pass === savedPassword) {
+                // Đăng nhập thành công -> Lưu mã và tải lại trang như hệ thống cũ
+                const upperId = code.toUpperCase();
                 localStorage.setItem('v11_employee_id', upperId);
-                // Tải lại trang để áp dụng mã mới ngay lập tức
                 window.location.reload(); 
             } else {
-                alert("Vui lòng nhập Mã Nhân Viên để tiếp tục!");
+                alert("Mã nhân viên hoặc mật khẩu không chính xác!");
             }
         }
+
+        // HÀM XỬ LÝ QUÊN MẬT KHẨU
+             // MỞ GIAO DIỆN QUÊN MẬT KHẨU
+        function handleForgotPassword() {
+            const code = document.getElementById('empCode').value.trim();
+            
+            if (!code) {
+                alert("Vui lòng điền Mã nhân viên ở ô phía trên trước để khôi phục mật khẩu!");
+                return;
+            }
+
+            // Làm sạch ô nhập trước khi mở
+            document.getElementById('supplierCodeInput').value = '';
+            document.getElementById('newResetPassInput').value = '';
+            
+            // Hiện Modal kính lỏng
+            document.getElementById('forgotPassModal').classList.remove('hidden');
+        }
+
+        // ĐÓNG GIAO DIỆN QUÊN MẬT KHẨU
+        function closeForgotPassModal() {
+            document.getElementById('forgotPassModal').classList.add('hidden');
+        }
+
+        // XỬ LÝ LƯU MẬT KHẨU KHI NHẬP ĐÚNG MÃ CỦA NHÀ CUNG CẤP
+        function submitForgotPassword() {
+            const code = document.getElementById('empCode').value.trim();
+            const supplierCode = document.getElementById('supplierCodeInput').value;
+            const newPass = document.getElementById('newResetPassInput').value;
+
+            // Kiểm tra mật mã của Duy Khang
+            if (supplierCode !== 'admin123') {
+                alert("Mã xác thực của nhà cung cấp không chính xác!");
+                return;
+            }
+
+            // Kiểm tra xem đã nhập mật khẩu mới chưa
+            if (!newPass) {
+                alert("Vui lòng nhập mật khẩu mới mà bạn muốn đổi!");
+                return;
+            }
+
+            // Lưu mật khẩu mới thẳng vào hệ thống
+            localStorage.setItem(`pass_${code}`, newPass);
+            alert(`Thành công! Mật khẩu của nhân viên ${code} đã được đổi. Vui lòng đăng nhập lại.`);
+            
+            // Đóng Modal và xóa ô pass ở ngoài để người dùng nhập pass mới
+            closeForgotPassModal();
+            document.getElementById('empPassword').value = ''; 
+        }
+
+        // --- KẾT THÚC PHẦN XỬ LÝ ĐĂNG NHẬP MỚI ---
+
 
         // HÀM XỬ LÝ ĐĂNG XUẤT
         function handleLogout() {
@@ -2005,13 +2156,62 @@ function openInvoice(id) {
         let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
         document.getElementById('cvMonthPick').value = currentMonthStr;
 
-        // === THÊM 2 DÒNG NÀY ĐỂ SET NGÀY MÙNG 1 CHO Ô "TỪ NGÀY" Ở BÁO CÁO ===
-        let firstDayOfMonth = currentMonthStr + "-01"; 
-        document.getElementById('filterStart').value = firstDayOfMonth;
-        // ===================================================================
-        
         autoSetDeliveryDate(); 
         addProductRow();
+   
+    // 1. Đóng/Mở Menu Bánh Răng
+function toggleSettingsMenu() {
+    const menu = document.getElementById('settingsMenu');
+    menu.classList.toggle('hidden');
+    
+    // Tự động đóng menu nếu bấm ra ngoài
+    const closeMenu = (e) => {
+        if (!document.getElementById('settingsMenuContainer').contains(e.target)) {
+            menu.classList.add('hidden');
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    setTimeout(() => document.addEventListener('click', closeMenu), 10);
+}
+
+// 2. Mở/Đóng Modal Đổi mật khẩu
+function openChangePassModal() {
+    document.getElementById('settingsMenu').classList.add('hidden'); // Đóng menu bánh răng
+    document.getElementById('changePassModal').classList.remove('hidden');
+}
+
+function closeChangePassModal() {
+    document.getElementById('changePassModal').classList.add('hidden');
+    document.getElementById('newPassInput').value = '';
+}
+
+// 3. Lưu mật khẩu mới chủ động
+function saveNewPassword() {
+    const newPass = document.getElementById('newPassInput').value.trim();
+    const currentEmpId = localStorage.getItem('v11_employee_id'); // Lấy mã nhân viên đang đăng nhập
+
+    if (!newPass) {
+        alert("Vui lòng nhập mật khẩu mới!");
+        return;
+    }
+
+    if (currentEmpId) {
+        localStorage.setItem(`pass_${currentEmpId}`, newPass);
+        alert("Đã đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.");
+        closeChangePassModal();
+    } else {
+        alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại!");
+    }
+}
+
+// 4. Hàm Đăng xuất
+function handleLogout() {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+        localStorage.removeItem('v11_employee_id');
+        window.location.reload();
+    }
+}
+
     </script>
 </body>
 </html>
