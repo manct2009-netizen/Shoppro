@@ -1,2 +1,323 @@
+/* Ép tất cả các thành phần trên web dùng font độc lập, bỏ qua font hệ thống */
+html, body, div, p, span, h1, h2, h3, h4, h5, h6, input, button, table, td, th {
+    font-family: 'Be Vietnam Pro', sans-serif !important;
+}
 
+    /* ========================================================
+   HIỆU ỨNG KÍNH CHO FORM ĐĂNG NHẬP (MSNV)
+   ======================================================== */
+
+/* Khung nền mờ phía sau login */
+#loginModal {
+    background: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(8px) !important;
+}
+
+/* Khối nội dung đăng nhập chính */
+#loginModal > div {
+    background: rgba(186, 230, 253, 0.2) !important; /* Nền xanh kính mờ */
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    
+    /* Viền bo tròn phát sáng 2 màu xanh dương & xanh lá */
+    border: 2px solid rgba(56, 189, 248, 0.6) !important; 
+    border-radius: 28px !important;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3), 
+        0 0 15px rgba(56, 189, 248, 0.4), 
+        inset 0 0 15px rgba(134, 239, 172, 0.3) !important;
+    
+    padding: 2rem !important;
+}
+
+/* Tiêu đề "Đăng nhập hệ thống" */
+#loginModal h2 {
+    color: #ffffff !important; /* Xanh đen */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Label (Mã số nhân viên) */
+#loginModal label {
+    color: #fff8DC !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+}
+
+/* Ô nhập liệu MSNV */
+#staffPass {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    border-radius: 12px !important;
+    transition: all 0.3s ease !important;
+}
+
+#staffPass:focus {
+    border-color: #86efac !important; /* Đổi sang xanh lá khi gõ */
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.5) !important;
+    outline: none !important;
+    background: #ffffff !important;
+}
+
+/* Nút Xác nhận */
+#loginModal button {
+    background: linear-gradient(135deg, #034C5F, #065a71) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(3, 76, 95, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+#loginModal button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(134, 239, 172, 0.4) !important;
+    filter: brightness(1.2);
+}
+
+    /* ========================================================
+   LIQUID GLASS THEME - NEON GLOW EFFECT
+   ======================================================== */
+
+/* 1. Nền tổng thể: Màu tối sâu để làm nổi bật hiệu ứng phát sáng */
+body {
+    background: linear-gradient(135deg, #020c14, #06273e, #021320) !important;
+    background-attachment: fixed !important;
+}
+
+/* 2. Hiệu ứng Kính lỏng (Glassmorphism) & Viền Bo tròn Phát sáng cho các khối */
+main .card, 
+#loginModal > div, 
+#view-analytics .bg-white,
+#view-cv .bg-[#FDF5F4], 
+main .bg-[#FDF5F4] {
+    /* Nền trắng đục mờ bên trong các ô */
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    
+    /* Viền bo tròn phát sáng màu xanh dương & xanh lá nhạt */
+    border: 2px solid rgba(56, 189, 248, 0.7) !important; /* Xanh dương sáng */
+    border-radius: 24px !important;
+    box-shadow: 
+        0 0 20px rgba(56, 189, 248, 0.2), /* Tỏa sáng ngoài xanh dương */
+        inset 0 0 15px rgba(134, 239, 172, 0.3) !important; /* Tỏa sáng trong xanh lá */
+    
+    /* Chữ bên trong màu xanh đen để dễ đọc trên nền trắng */
+    color: #034C5F !important;
+    transition: all 0.3s ease;
+}
+
+/* 3. Header & Thanh Danh Mục (Nav) */
+header {
+    background: rgba(4, 20, 36, 0.7) !important; /* Nền tối mờ để nổi bật chữ trắng */
+    backdrop-filter: blur(20px) !important;
+    border-bottom: 2px solid rgba(56, 189, 248, 0.6) !important;
+    box-shadow: 0 4px 25px rgba(134, 239, 172, 0.2) !important;
+}
+
+header h1 {
+    text-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+    color: #ffffff !important;
+}
+
+/* Thanh danh mục (khung bao ngoài) */
+nav {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    box-shadow: inset 0 0 10px rgba(134, 239, 172, 0.1) !important;
+}
+
+/* Các nút trong thanh danh mục: Chữ màu trắng */
+nav button {
+    color: #ffffff !important;
+    background: transparent !important;
+    transition: all 0.3s ease-in-out !important;
+    border: 1px solid transparent !important;
+}
+
+/* Hiệu ứng hover: Phát sáng chữ và icon */
+nav button:hover {
+    text-shadow: 0 0 12px #38bdf8, 0 0 24px #86efac !important;
+    color: #e0f2fe !important;
+    transform: translateY(-2px);
+}
+nav button:hover i {
+    filter: drop-shadow(0 0 10px #38bdf8) drop-shadow(0 0 15px #86efac);
+}
+
+/* Trạng thái tab đang được chọn (Active) */
+nav button.bg-white {
+    background: rgba(56, 189, 248, 0.25) !important;
+    border: 1px solid rgba(56, 189, 248, 0.8) !important;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(134, 239, 172, 0.3) !important;
+    text-shadow: 0 0 10px #38bdf8 !important;
+}
+
+/* 4. Khung Input & Form */
+.form-input, .crm-input, select {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid rgba(56, 189, 248, 0.5) !important;
+    color: #034C5F !important;
+    font-weight: 700 !important;
+    box-shadow: inset 0 0 8px rgba(134, 239, 172, 0.15) !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Hiệu ứng focus vào Input phát sáng mạnh */
+.form-input:focus, .crm-input:focus, select:focus {
+    border-color: #86efac !important; /* Đổi sang xanh lá khi focus */
+    box-shadow: 
+        0 0 15px rgba(56, 189, 248, 0.6), 
+        0 0 25px rgba(134, 239, 172, 0.5),
+        inset 0 0 10px rgba(56, 189, 248, 0.2) !important;
+    outline: none !important;
+    background: #ffffff !important;
+}
+
+/* 5. Bàn làm việc & Bảng dữ liệu */
+table thead {
+    background: rgba(255, 255, 255, 0.6) !important;
+    backdrop-filter: blur(5px) !important;
+    border-bottom: 2px solid rgba(56, 189, 248, 0.5) !important;
+}
+
+table tr {
+    border-bottom: 1px solid rgba(56, 189, 248, 0.2) !important;
+}
+
+table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.1) !important;
+    box-shadow: inset 0 0 10px rgba(134, 239, 172, 0.1) !important;
+}
+
+/* 6. Các nút bấm chức năng chính (Lưu, Thêm...) */
+.btn-main, button.bg-[#EE6457], button.bg-[#034C5F] {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.4) !important;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4) !important;
+}
+
+.btn-main:hover, button.bg-[#EE6457]:hover, button.bg-[#034C5F]:hover {
+    box-shadow: 0 0 25px rgba(134, 239, 172, 0.6), 0 0 15px rgba(56, 189, 248, 0.5) !important;
+    transform: scale(1.02);
+}
+
+/* ========================================================
+   BẢO VỆ TUYỆT ĐỐI KHU VỰC HOÁ ĐƠN VÀ SỰ KIỆN
+   (Phần này đảm bảo các hiệu ứng trên không lây lan vào)
+   ======================================================== */
+
+#invoiceModal > div > div, 
+#invoiceModal * {
+    background: inherit;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: inherit;
+    box-shadow: none !important;
+    text-shadow: none !important;
+}
+
+#invoiceContent {
+    background: white !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+#eventModal > div, 
+#eventModal * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none;
+    text-shadow: none !important;
+}
+
+#eventModal .bg-white {
+    background: white !important;
+}
+
+    
+    
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        :root { --deep-teal: #034C5F; --light-teal: #97BEC6; --coral: #EE6457; --soft-pink: #F9C4BA; --bg-creamy: #FDF5F4; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-creamy); color: #1e293b; }
+        .form-input { width: 100%; padding: 10px 12px 10px 40px; border-radius: 12px; border: 1px solid var(--soft-pink); font-size: 14px; transition: all 0.3s; background: white; }
+        .form-input:focus { border-color: var(--deep-teal); outline: none; box-shadow: 0 0 0 3px rgba(3, 76, 95, 0.1); }
+        .input-group { position: relative; }
+        .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--light-teal); font-size: 14px; }
+        .card { background: white; border-radius: 24px; border: 1px solid var(--soft-pink); box-shadow: 0 4px 15px rgba(238, 100, 87, 0.05); }
+        .btn-main { background-color: var(--deep-teal); color: white; border-radius: 12px; font-weight: 700; transition: 0.2s; }
+        .crm-input { background: transparent; border: none; width: 100%; font-size: 13px; padding: 6px; border-radius: 6px; }
+        .crm-input:focus { background: white; box-shadow: 0 0 0 1px var(--light-teal); outline: none; }
+        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        
+        .stock-low { color: #EE6457; font-weight: bold; }
+        .stock-ok { color: #034C5F; }
+        
+        #toast { visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* Animation & Styling cho Sinh nhật / Kỷ niệm */
+        @keyframes pulse-pink {
+            0% { box-shadow: 0 0 0 0 rgba(219, 39, 119, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(219, 39, 119, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(219, 39, 119, 0); }
+        }
+        @keyframes pulse-blue {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+        .birthday-today {
+            background-color: #db2777 !important;
+            color: white !important;
+            animation: pulse-pink 2s infinite;
+            font-weight: 900 !important;
+            border-color: #be185d !important;
+            border-radius: 8px;
+        }
+        .anniversary-today {
+            background-color: #2563eb !important;
+            color: white !important;
+            animation: pulse-blue 2s infinite;
+            font-weight: 900 !important;
+            border-color: #1d4ed8 !important;
+            border-radius: 8px;
+        }
+        .bg-light-pink { background-color: #fce7f3 !important; color: #db2777; font-weight: 700; border-radius: 8px; }
+        .bg-light-blue { background-color: #dbeafe !important; color: #2563eb; font-weight: 700; border-radius: 8px; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Textarea cho bảng khách hàng - Bỏ khung xanh, tự động xuống dòng */
+.crm-textarea {
+    background: transparent !important;
+    border: 1px dashed transparent !important;
+    box-shadow: none !important;
+    width: 100%;
+    font-size: 13px;
+    padding: 6px;
+    border-radius: 6px;
+    resize: none; /* Ẩn nút kéo giãn mặc định */
+    overflow: hidden; /* Ẩn thanh cuộn */
+    line-height: 1.5;
+    color: #034C5F !important;
+    min-height: 32px;
+}
+
+/* Chỉ hiện viền mờ khi click vào để sửa */
+.crm-textarea:focus {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(56, 189, 248, 0.5) !important;
+    outline: none !important;
+}
 
