@@ -833,7 +833,7 @@ table tbody tr:hover {
                     <div class="flex flex-wrap gap-2 items-center bg-[#FDF5F4] p-2 rounded-xl border border-[#F9C4BA]">
                         <span class="text-[10px] font-bold text-[#97BEC6] uppercase ml-2"><i class="fa-solid fa-filter mr-1"></i> Lọc:</span>
                         <select id="cvSumMonth" onchange="renderCVSummary()" class="form-input !pl-3 py-1.5 w-auto font-bold text-[#034C5F] text-xs">
-                            <option value="all">Tất cả các tháng</option>
+                            <option value="all">Tất cả </option>
                             <option value="01">Tháng 1</option><option value="02">Tháng 2</option><option value="03">Tháng 3</option>
                             <option value="04">Tháng 4</option><option value="05">Tháng 5</option><option value="06">Tháng 6</option>
                             <option value="07">Tháng 7</option><option value="08">Tháng 8</option><option value="09">Tháng 9</option>
@@ -913,16 +913,17 @@ table tbody tr:hover {
 
                     <div class="overflow-x-auto overflow-y-auto flex-1" style="max-height: 500px;">
                         <table class="w-full text-left text-sm min-w-[500px]">
-                            <thead class="bg-white text-[10px] font-bold text-slate-400 uppercase sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th class="p-3">Ngày</th>
-                                    <th class="p-3 text-right">Số tiền</th>
-                                    <th class="p-3 text-center">H.thức</th>
-                                    <th class="p-3">Ghi chú</th>
-                                    <th class="p-3 text-center">Đã xử lý</th>
-                                    <th class="p-3 text-center w-20">Lệnh</th>
-                                </tr>
-                            </thead>
+                            <thead class="bg-white text-[11px] font-black text-gray-700 uppercase sticky top-0 z-10 shadow-sm">
+    <tr>
+        <th class="p-3 text-left">Ngày</th>
+        <th class="p-3 text-right">Số tiền</th>
+        <th class="p-3 text-center">H.thức</th>
+        <th class="p-3 text-left">Ghi chú</th>
+        <th class="p-3 text-center">Đã xử lý</th>
+        <th class="p-3 text-center w-20">Lệnh</th>
+    </tr>
+</thead>
+
                             <tbody id="cvAccTableBody" class="divide-y divide-slate-100 bg-white"></tbody>
                         </table>
                     </div>
@@ -936,32 +937,48 @@ table tbody tr:hover {
                     
                     <div class="p-4 bg-white border-b border-[#F9C4BA]/30 relative">
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent to-red-50/50 pointer-events-none"></div>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
-                            <div class="col-span-2 md:col-span-1">
-    <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Chọn Tháng</label>
-    <div class="relative">
-        <i class="fa-solid fa-calendar-days absolute left-3 top-1/2 -translate-y-1/2 text-rose-400 pointer-events-none"></i>
-        <input type="month" id="cvMonthPick" class="form-input !pl-9 mt-1 text-[#034C5F] font-bold w-full bg-rose-50/50 cursor-pointer">
+                      <div class="grid grid-cols-12 gap-2 relative z-10">
+    <div class="col-span-6 md:col-span-3">
+        <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Chọn Tháng</label>
+        <div class="relative">
+            <i class="fa-solid fa-calendar-days absolute left-2 top-1/2 -translate-y-1/2 text-rose-400 text-xs pointer-events-none"></i>
+            <input type="month" id="cvMonthPick" class="form-input !pl-7 mt-1 text-[#034C5F] font-bold w-full bg-rose-50/50 cursor-pointer text-xs">
+        </div>
+    </div>
+
+   <div class="col-span-3 md:col-span-1"> <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block text-center">Lần</label>
+    <select id="cvMonthEntry" class="form-input mt-1 w-full text-[#034C5F] font-bold text-[11px] bg-white !pl-1 !pr-0 border-rose-200">
+        <option value="Lần 1">L1</option>
+        <option value="Lần 2">L2</option>
+        <option value="Lần 3">L3</option>
+        <option value="Lần 4">L4</option>
+        <option value="Ghi đè">Sửa</option>
+    </select>
+</div>
+
+
+    <div class="col-span-6 md:col-span-3">
+        <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">CV</label>
+        <input type="text" inputmode="numeric" id="cvMonthCV" class="form-input mt-1 w-full text-xs" placeholder="Nhập CV..." oninput="formatCurrencyInput(this)">
+    </div>
+    
+    <div class="col-span-6 md:col-span-4">
+        <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Tiền đơn nhập</label>
+        <input type="text" inputmode="numeric" id="cvMonthImport" class="form-input mt-1 w-full text-[#EE6457] font-black text-xs" placeholder="Nhập tiền..." oninput="formatCurrencyInput(this)">
+    </div>
+    
+    <div class="col-span-8 md:col-span-9">
+        <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Ghi chú </label>
+        <input type="text" id="cvMonthNote" class="form-input mt-1 w-full text-xs" placeholder="Ghi chú thêm cho lần này...">
+    </div>
+    
+    <div class="col-span-4 md:col-span-3 flex items-end">
+        <button id="btnSaveCVMonth" onclick="saveCVMonthlyStat()" class="w-full py-[10px] bg-[#EE6457] text-white rounded-xl font-black shadow-lg uppercase hover:bg-[#d85449] transition-all text-[10px] border border-red-300">
+            <i class="fa-solid fa-floppy-disk mr-1"></i> LƯU
+        </button>
     </div>
 </div>
 
-                            <div class="col-span-2 md:col-span-1">
-                                <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">CV</label>
-                                <input type="text" inputmode="numeric" id="cvMonthCV" class="form-input mt-1 w-full" placeholder="Nhập CV..." oninput="formatCurrencyInput(this)">
-                            </div>
-                            <div class="col-span-2 md:col-span-2">
-                                <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Tổng tiền đơn nhập *</label>
-                                <input type="text" inputmode="numeric" id="cvMonthImport" class="form-input mt-1 w-full text-[#EE6457] font-black" placeholder="Nhập tổng tiền hóa đơn..." oninput="formatCurrencyInput(this)">
-                            </div>
-                            <div class="col-span-2 md:col-span-3">
-                                <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Ghi chú</label>
-                                <input type="text" id="cvMonthNote" class="form-input mt-1 w-full text-sm" placeholder="Ghi chú thêm...">
-                            </div>
-                            <div class="col-span-2 md:col-span-1 flex items-end">
-                                <button id="btnSaveCVMonth" onclick="saveCVMonthlyStat()" class="w-full py-[11px] bg-[#EE6457] text-white rounded-xl font-black shadow-lg uppercase hover:bg-[#d85449] transition-all text-xs border border-red-300"><i class="fa-solid fa-floppy-disk mr-1"></i> LƯU THÁNG</button>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                         <div class="flex items-center gap-2">
@@ -972,16 +989,22 @@ table tbody tr:hover {
 
                     <div class="overflow-x-auto overflow-y-auto flex-1" style="max-height: 500px;">
                         <table class="w-full text-left text-sm min-w-[600px]">
-                            <thead class="bg-[#034C5F] text-[10px] font-bold text-white uppercase sticky top-0 z-10 shadow-sm">
-                                <tr>
-                                    <th class="p-3 text-center border-r border-white/10">Tháng</th>
-                                    <th class="p-3 text-right text-emerald-300">Tổng Tiền Tích<br><span class="text-[8px] font-normal italic">(Tự cộng)</span></th>
-                                    <th class="p-3 text-right">CV</th>
-                                    <th class="p-3 text-right text-rose-300">Tiền Nhập</th>
-                                    <th class="p-3 text-right text-yellow-300">Chưa Nâng</th>
-                                    <th class="p-3 text-center w-16">Thao tác</th>
-                                </tr>
-                            </thead>
+                            <thead class="bg-[#034C5F] text-[11px] font-black uppercase sticky top-0 z-10 shadow-sm">
+    <tr>
+        <th class="p-3 text-center border-r border-black/10 text-black bg-gray-100">Tháng</th>
+        
+        <th class="p-3 text-right text-emerald-700">Tổng Tiền Tích<br></th>
+        
+        <th class="p-3 text-right text-gray-600">CV</th>
+        
+        <th class="p-3 text-right text-rose-700">Tiền Nhập</th>
+        <th class="p-3 text-right text-yellow-700">Chưa Nâng</th>
+        
+        <th class="p-3 text-center w-16 text-black">Thao tác</th>
+    </tr>
+</thead>
+
+
                             <tbody id="cvMonthTableBody" class="divide-y divide-slate-200 bg-white"></tbody>
                         </table>
                     </div>
@@ -2057,40 +2080,85 @@ function openInvoice(id) {
             }, 0);
         }
 
-        function saveCVMonthlyStat() {
-            let monthPick = document.getElementById('cvMonthPick').value;
-            let cv = parseCurrency(document.getElementById('cvMonthCV').value);
-            let importAmt = parseCurrency(document.getElementById('cvMonthImport').value);
-            let note = document.getElementById('cvMonthNote').value;
+                function saveCVMonthlyStat() {
+    let monthPick = document.getElementById('cvMonthPick').value;
+    let cv = parseCurrency(document.getElementById('cvMonthCV').value);
+    let importAmt = parseCurrency(document.getElementById('cvMonthImport').value);
+    let manualNote = document.getElementById('cvMonthNote').value.trim();
+    let entryType = document.getElementById('cvMonthEntry').value;
 
-            if(!monthPick) return showToast("Vui lòng chọn Tháng để lưu!");
+    if(!monthPick) return showToast("Vui lòng chọn Tháng để lưu!");
 
+    // Xử lý nối chuỗi Ghi chú chủ động kèm Lần nhập (VD: "Lần 1 (Chuyển khoản thêm)")
+    let finalNote = "";
+    if (entryType === "Ghi đè") {
+        finalNote = manualNote; 
+    } else {
+        finalNote = manualNote ? `${entryType} (${manualNote})` : entryType;
+    }
+
+    if (entryType === "Ghi đè") {
+        // CHẾ ĐỘ 1: GHI ĐÈ TOÀN BỘ (Dùng khi bạn bấm nút Sửa trên bảng để chốt lại 1 con số cuối cùng)
+        cvMonthlyStats[monthPick] = {
+            cv: cv,
+            importAmt: importAmt,
+            note: finalNote
+        };
+        showToast("Đã ghi đè lại toàn bộ số liệu tháng!");
+    } else {
+        // CHẾ ĐỘ 2: LẦN 1, LẦN 2... CỘNG GỘP TỰ ĐỘNG
+        if (cvMonthlyStats[monthPick]) {
+            // Nếu đã có dữ liệu -> Cộng dồn giá trị
+            cvMonthlyStats[monthPick].cv = (cvMonthlyStats[monthPick].cv || 0) + cv;
+            cvMonthlyStats[monthPick].importAmt = (cvMonthlyStats[monthPick].importAmt || 0) + importAmt;
+            
+            // Nối tiếp ghi chú mới vào ghi chú cũ
+            let oldNote = cvMonthlyStats[monthPick].note || "";
+            cvMonthlyStats[monthPick].note = oldNote ? (oldNote + " | " + finalNote) : finalNote;
+        } else {
+            // Nếu chưa có tháng này -> Tạo mới
             cvMonthlyStats[monthPick] = {
                 cv: cv,
                 importAmt: importAmt,
-                note: note
+                note: finalNote
             };
-
-            document.getElementById('cvMonthCV').value = '';
-            document.getElementById('cvMonthImport').value = '';
-            document.getElementById('cvMonthNote').value = '';
-            document.getElementById('btnSaveCVMonth').innerText = "LƯU THÁNG";
-
-            saveCVSync();
-            renderAllCV();
-            showToast("Đã lưu số liệu tháng!");
         }
+        showToast(`Đã cộng gộp thành công (${entryType})!`);
+    }
 
-        function editCVMonthlyStat(monthKey) {
-            let stat = cvMonthlyStats[monthKey];
-            if(!stat) return;
-            document.getElementById('cvMonthPick').value = monthKey;
-            document.getElementById('cvMonthCV').value = new Intl.NumberFormat('en-US').format(stat.cv || 0);
-            document.getElementById('cvMonthImport').value = new Intl.NumberFormat('en-US').format(stat.importAmt || 0);
-            document.getElementById('cvMonthNote').value = stat.note || '';
-            document.getElementById('btnSaveCVMonth').innerText = "CẬP NHẬT";
-            document.getElementById('cvMonthPick').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+    // Xóa rỗng các ô sau khi lưu xong
+    document.getElementById('cvMonthCV').value = '';
+    document.getElementById('cvMonthImport').value = '';
+    document.getElementById('cvMonthNote').value = '';
+    document.getElementById('cvMonthEntry').value = 'Lần 1'; // Reset ô chọn về Lần 1
+    
+    // Đưa nút LƯU về trạng thái gốc
+    document.getElementById('btnSaveCVMonth').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> LƯU THÁNG';
+    document.getElementById('btnSaveCVMonth').classList.replace('bg-amber-500', 'bg-[#EE6457]');
+
+    saveCVSync();
+    renderAllCV();
+}
+
+function editCVMonthlyStat(monthKey) {
+    let stat = cvMonthlyStats[monthKey];
+    if(!stat) return;
+    
+    // Đẩy dữ liệu cũ lên form
+    document.getElementById('cvMonthPick').value = monthKey;
+    document.getElementById('cvMonthCV').value = new Intl.NumberFormat('en-US').format(stat.cv || 0);
+    document.getElementById('cvMonthImport').value = new Intl.NumberFormat('en-US').format(stat.importAmt || 0);
+    document.getElementById('cvMonthNote').value = stat.note || '';
+    
+    // Tự động chuyển Dropdown sang "Ghi đè" và đổi màu nút để nhắc nhở
+    document.getElementById('cvMonthEntry').value = 'Ghi đè';
+    let btnSave = document.getElementById('btnSaveCVMonth');
+    btnSave.innerHTML = '<i class="fa-solid fa-pen mr-1"></i> GHI ĐÈ TỔNG';
+    btnSave.classList.replace('bg-[#EE6457]', 'bg-amber-500'); // Đổi màu cảnh báo
+    
+    document.getElementById('cvMonthPick').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 
         function deleteCVMonthlyStat(monthKey) {
             if(confirm(`Xóa thống kê của tháng ${monthKey}?`)) {
@@ -2172,10 +2240,10 @@ function openInvoice(id) {
         }
 
 
-        function renderCVSummary() {
+                function renderCVSummary() {
             let mFilter = document.getElementById('cvSumMonth').value;
             let yFilter = document.getElementById('cvSumYear').value;
-
+            
             let totalCV = 0;
             let totalAcc = 0;
             let totalImport = 0;
@@ -2203,6 +2271,7 @@ function openInvoice(id) {
             document.getElementById('sumImport').innerText = formatMoney(totalImport);
             document.getElementById('sumRemain').innerText = formatMoney(remain);
         }
+
 
         function exportCVToExcel() {
             let csv = "\ufeffTháng,Tổng tiền tích (Tự động),CV,Tổng tiền nhập,Còn Lại Chưa Nâng,Ghi chú\n";
