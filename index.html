@@ -2423,6 +2423,34 @@ function optimizeNativeDatePickers() {
 
 // Gọi hàm ngay khi web load xong
 document.addEventListener('DOMContentLoaded', optimizeNativeDatePickers);
+// 1. Hàm thực hiện đăng nhập
+function checkLogin() {
+    const passwordInput = document.getElementById('passwordInput').value;
+    // passwordHash là biến chứa mật khẩu bạn đã khai báo ở đầu file (ví dụ: "2408")
+    if (passwordInput === passwordHash) {
+        localStorage.setItem('savedPassword', passwordInput); // Lưu mật khẩu vào máy
+        document.getElementById('loginOverlay').style.display = 'none';
+        renderTable();
+        updateStats();
+    } else {
+        alert('Mật khẩu không chính xác!');
+    }
+}
+
+// 2. Tự động kiểm tra mỗi khi mở trang hoặc load lại trang
+window.addEventListener('load', () => {
+    const savedPassword = localStorage.getItem('savedPassword');
+    
+    // Nếu mật khẩu đã lưu khác với mật khẩu hiện tại trong code (passwordHash)
+    if (savedPassword !== passwordHash) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        localStorage.removeItem('savedPassword'); // Xóa mật khẩu cũ đã sai
+    } else {
+        document.getElementById('loginOverlay').style.display = 'none';
+        renderTable();
+        updateStats();
+    }
+});
 
 
 
