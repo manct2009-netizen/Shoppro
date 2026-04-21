@@ -2149,7 +2149,7 @@ function openInvoice(id) {
                         <div class="font-black text-[#034C5F] bg-blue-50 py-1 rounded-md border border-blue-100">${month}</div>
                     </td>
                     <td class="p-3 text-right font-black text-emerald-600">${new Intl.NumberFormat('en-US').format(totalAcc)} đ</td>
-                    <td class="p-3 text-right font-bold text-slate-700">${new Intl.NumberFormat('en-US').format(stat.cv)}</td>
+                    <td class="p-3 text-right font-bold text-slate-700">${new Intl.NumberFormat('en-US').format(stat.cv)} Cv</td>
                     <td class="p-3 text-right font-black text-rose-500">${new Intl.NumberFormat('en-US').format(stat.importAmt)} đ</td>
                     <td class="p-3 text-right font-black ${remaining >= 0 ? 'text-amber-500' : 'text-red-600'}">${new Intl.NumberFormat('en-US').format(remaining)} đ</td>
                     <td class="p-3 align-top">
@@ -2198,7 +2198,7 @@ function openInvoice(id) {
 
             let remain = totalAcc - totalImport;
 
-            document.getElementById('sumCV').innerText = new Intl.NumberFormat('en-US').format(totalCV);
+            document.getElementById('sumCV').innerText = new Intl.NumberFormat('en-US').format(totalCV) + ' Cv';
             document.getElementById('sumAcc').innerText = formatMoney(totalAcc);
             document.getElementById('sumImport').innerText = formatMoney(totalImport);
             document.getElementById('sumRemain').innerText = formatMoney(remain);
