@@ -1516,7 +1516,7 @@ table tbody tr:hover {
             document.getElementById('newCustPhone').value = ''; document.getElementById('newCustName').value = ''; document.getElementById('newCustAddr').value = '';
             showToast("Đã thêm khách hàng mới thành công!");
         }
-        function renderTable() {
+                function renderTable() {
             const fStart = document.getElementById('listFilterStart').value;
             const fEnd = document.getElementById('listFilterEnd').value;
             const fType = document.getElementById('listFilterType').value;
@@ -1528,7 +1528,8 @@ table tbody tr:hover {
                 const searchMatch = !search || o.customer.name.toLowerCase().includes(search) || o.customer.phone.includes(search);
                 return dateMatch && typeMatch && searchMatch;
             });
-                        document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
+            
+            document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
                 const formattedShipDate = o.date ? o.date.split('-').reverse().join('/') : '';
                 
                 // Xử lý viết tắt hình thức thanh toán
@@ -1539,6 +1540,11 @@ table tbody tr:hover {
                 // Xử lý giao diện nút Đã Thu
                 let paidBg = o.isPaid ? "bg-green-500 border-green-600" : "bg-slate-100 border-slate-200";
                 let paidIconColor = o.isPaid ? "text-white" : "text-slate-300";
+
+                // THÊM ĐOẠN NÀY: Kiểm tra trạng thái để đổi màu "Ngày gửi"
+                let shipDateStyle = o.status === 'Đợi gửi' 
+                    ? "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30" // Màu cam đỏ mặc định
+                    : "bg-slate-100 text-slate-400 border border-slate-200 opacity-60"; // Màu xám nhạt làm mờ
 
                 return `
                 <tr class="hover:bg-[#FDF5F4]/50 transition-colors">
@@ -1556,7 +1562,7 @@ table tbody tr:hover {
                     </td>
                     <td class="p-4 text-xs text-slate-500 line-clamp-1">${o.products.map(p => `${p.name} (x${p.qty})`).join(', ')}</td>
                     <td class="p-4 text-center">
-                        <span class="bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap">
+                        <span class="${shipDateStyle} font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all">
                             <i class="fa-solid fa-truck-fast mr-1"></i>${formattedShipDate}
                         </span>
                     </td>
@@ -1583,9 +1589,6 @@ table tbody tr:hover {
         <option value="Đã Hủy" ${o.status === 'Đã Hủy' ? 'selected' : ''} style="background: white; color: #374151;">Đã Hủy ❌</option>
     </select>
 </td>
-
-
-
                     <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
                     <td class="p-4 text-center">
                         <button onclick="togglePaidStatus(${o.id})" class="w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${paidBg} ${paidIconColor} hover:scale-110 shadow-sm mx-auto" title="Đánh dấu đã thu tiền">
@@ -1601,8 +1604,8 @@ table tbody tr:hover {
                     </td>
                 </tr>`;
             }).join('');
-
         }
+
     
   function getStatusStyles(status) {
     const styles = {
