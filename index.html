@@ -127,7 +127,7 @@
 
                 <div class="flex items-center gap-1 md:gap-3">
                 <div class="relative" id="notificationMenuContainer">
-                    <button onclick="toggleNotificationMenu()" class="p-2 text-[#ffff70] hover:text-[#EE6457] transition-all relative">
+                    <button onclick="toggleNotificationMenu()" class="p-2 text-[#4e75a3] hover:text-[#EE6457] transition-all relative">
                         <i class="fa-regular fa-bell text-xl md:text-2xl"></i>
                         <span id="notificationDot" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white animate-pulse"></span>
                     </button>
@@ -286,11 +286,29 @@
         </div>
 
         <div id="view-analytics" class="hidden space-y-6">
-            <div class="card p-4 flex flex-wrap gap-3 items-center bg-white">
-                <div class="flex items-center gap-2"><i class="fa-solid fa-calendar-days text-[#034C5F]"></i><input type="date" id="filterStart" class="form-input !pl-3 w-auto text-xs"></div>
-                <div class="flex items-center gap-2"><i class="fa-solid fa-arrow-right text-[#97BEC6]"></i><input type="date" id="filterEnd" class="form-input !pl-3 w-auto text-xs"></div>
-                <button onclick="renderAnalytics()" class="btn-main px-6 py-2 text-xs uppercase"><i class="fa-solid fa-magnifying-glass-chart mr-1"></i> Xem báo cáo</button>
-            </div>
+            <div class="card p-4 flex flex-wrap items-end gap-3 bg-white">
+    <div class="flex flex-col gap-1">
+        
+        <div class="flex items-center gap-2 bg-[#FDF5F4] px-3 py-2 rounded-xl border border-[#F9C4BA]">
+            <i class="fa-solid fa-calendar-days text-[#034C5F] text-xs"></i>
+            <input type="date" id="filterStart" class="bg-transparent outline-none text-xs font-bold text-[#034C5F] w-28">
+        </div>
+    </div>
+    
+    <div class="flex flex-col gap-1">
+        
+        <div class="flex items-center gap-2 bg-[#FDF5F4] px-3 py-2 rounded-xl border border-[#F9C4BA]">
+            <i class="fa-solid fa-arrow-right text-[#97BEC6] text-xs"></i>
+            <input type="date" id="filterEnd" class="bg-transparent outline-none text-xs font-bold text-[#034C5F] w-28">
+        </div>
+    </div>
+
+    <button onclick="renderAnalytics()" class="bg-[#EE6457] text-white w-[38px] h-[38px] rounded-3xl flex items-center justify-center hover:bg-[#d85449] transition-all shadow-md active:scale-95 mb-[1px]">
+        <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+</div>
+
+
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                  <div class="card p-6">
@@ -460,22 +478,37 @@
                 </div>
             </div>
 
-            <div class="card overflow-hidden">
-                <div class="p-4 bg-[#034C5F] text-white flex justify-between items-center">
-                    <div class="flex items-center gap-4">
-                        <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng</h3>
-                        <div class="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-lg border border-white/20">
-                            <span class="text-[10px] font-bold text-[#97BEC6] uppercase">Sắp xếp:</span>
-                            <select id="customerSortOrder" onchange="renderCustomerCRM()" class="bg-transparent text-xs font-bold focus:outline-none cursor-pointer">
-                                <option value="newest" class="text-black">Mới nhất</option>
-                                <option value="oldest" class="text-black">Cũ nhất</option>
-                                <option value="name" class="text-black">Tên A-Z</option>
-                                <option value="spending" class="text-black">Vip (Chi tiêu)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="exportCustomersToExcel()" class="text-[10px] bg-white/20 px-3 py-1 rounded-lg border border-white/30 hover:bg-white/40"><i class="fa-solid fa-download mr-1"></i> Tải CSV</button>
-                </div>
+           <div class="card overflow-hidden">
+                     <div class="p-4 bg-[#034C5F] text-white flex flex-col gap-4">
+    <div class="flex justify-between items-center">
+        <h3 class="font-bold text-sm uppercase">
+            <i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng
+        </h3>
+        
+        <button onclick="exportCustomersToExcel()" class="text-[10px] bg-white/20 px-3 py-1.5 rounded-lg border border-white/30 hover:bg-white/40 transition-colors whitespace-nowrap">
+            <i class="fa-solid fa-download mr-1"></i> Tải CSV
+        </button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-lg border border-white/20">
+            <span class="text-[10px] font-bold text-[#97BEC6] uppercase hidden sm:inline">Sắp xếp:</span>
+            <select id="customerSortOrder" onchange="renderCustomerCRM()" class="bg-transparent text-xs font-bold rounded-lg focus:outline-none cursor-pointer">
+                <option value="newest" class="text-black">Mới nhất</option>
+                <option value="oldest" class="text-black">Cũ nhất</option>
+                <option value="name" class="text-black">Tên A-Z</option>
+                <option value="spending" class="text-black">Vip (Chi tiêu)</option>
+            </select>
+        </div>
+
+        <div class="flex-1 min-w-[200px] max-w-sm relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-white/60"></i>
+            <input type="text" id="searchCustomerInput" oninput="renderCustomerCRM()" placeholder="Tìm Tên hoặc SĐT khách..." 
+                class="w-full pl-9 pr-3 py-1.5 rounded-lg border border-white/20 bg-white/10 focus:bg-white focus:text-[#034C5F] text-white placeholder-white/60 focus:border-[#EE6457] outline-none text-xs transition-all shadow-inner">
+        </div>
+    </div>
+</div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm min-w-[1600px]">
     <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
@@ -503,8 +536,8 @@
                 <div id="view-cv" class="hidden space-y-6">
             
             <section class="card p-6 bg-white border-2 border-[#F9C4BA] shadow-md relative overflow-hidden">
-                <div class="absolute top-0 right-0 bg-[#FDF5F4] px-4 py-1 rounded-bl-2xl border-b border-l border-[#F9C4BA]">
-                    <span class="text-[10px] font-black text-[#EE6457] uppercase tracking-widest"><i class="fa-solid fa-chart-pie mr-1"></i> Bảng Tổng Quan</span>
+                <div class="absolute top-0 right-0 bg-[#FDF5F4] px-4 py-0.2 rounded-bl-2xl border-b border-l border-[#F9C4BA]">
+                    <span class="text-[10px] font-black text-[#EE6457] uppercase tracking-widest"><i class="fa-solid fa-chart-pie mr-1"></i> Bảng Tổng kết</span>
                 </div>
                 
                 <div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 mt-2">
@@ -525,11 +558,11 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-[#FDF5F4] p-5 rounded-2xl border border-[#F9C4BA] text-center shadow-inner hover:scale-105 transition-transform">
-                        <p class="text-[11px] font-bold text-[#97BEC6] uppercase mb-1">Tổng CV Tích Lũy</p>
+                        <p class="text-[11px] font-bold text-[#97BEC6] p mb-1">Tổng CV Tích Lũy</p>
                         <h4 class="text-2xl font-black text-[#034C5F]" id="sumCV">0</h4>
                     </div>
                     <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 p-5 rounded-2xl border border-emerald-200 text-center shadow-inner hover:scale-105 transition-transform">
-                        <p class="text-[11px] font-bold text-emerald-600 uppercase mb-1">Tổng Tiền Tích (Tự nhập)</p>
+                        <p class="text-[11px] font-bold text-emerald-600 uppercase mb-1">Tổng Tiền Tích Lũy</p>
                         <h4 class="text-2xl font-black text-emerald-700" id="sumAcc">0 ₫</h4>
                     </div>
                     <div class="bg-gradient-to-br from-rose-50 to-rose-100 p-5 rounded-2xl border border-rose-200 text-center shadow-inner hover:scale-105 transition-transform">
@@ -547,7 +580,7 @@
                 
                 <section class="card overflow-hidden flex flex-col h-full border-t-[6px] border-[#034C5F]">
                     <div class="p-4 bg-[#FDF5F4] border-b border-[#F9C4BA] flex justify-between items-center">
-                        <h3 class="font-black text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-list-check text-[#EE6457] mr-2"></i>Nhập Tích Lũy Hằng Ngày</h3>
+                        <h3 class="font-black text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-list-check text-[#EE6457] mr-2"></i>Danh Sách Tích Lũy</h3>
                     </div>
                     
                     <div class="p-4 bg-white border-b border-[#F9C4BA]/30">
@@ -563,17 +596,17 @@
 
                             <div class="col-span-2 md:col-span-1">
                                 <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Hình thức</label>
-                                <select id="cvAccMethod" class="form-input mt-1 font-bold text-[#034C5F] w-full">
-                                    <option value="CK">Chuyển khoản (CK)</option>
-                                    <option value="TM">Tiền mặt (TM)</option>
+                                <select id="cvAccMethod" class="form-input !px-2  mt-1 h-11 font-bold text-[#034C5F] w-full">
+                                    <option value="CK">Chuyển khoản</option>
+                                    <option value="TM">Tiền mặt</option>
                                 </select>
                             </div>
                             <div class="col-span-2">
-                                <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Số tiền (đ) *</label>
-                                <input type="text" inputmode="numeric" id="cvAccAmount" class="form-input mt-1 w-full text-[#EE6457] font-black text-lg" placeholder="VD: 1,500,000" oninput="formatCurrencyInput(this)">
+                                <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Số tiền</label>
+                                <input type="text" inputmode="numeric" id="cvAccAmount" class="form-input  mt-1 w-full​ h-11 text-[#EE6457] font-black text-lg" placeholder="VD: 1,500,000" oninput="formatCurrencyInput(this)">
                             </div>
                             <div class="col-span-2 md:col-span-3">
-                                <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Ghi chú (Tùy chọn)</label>
+                                <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Ghi chú</label>
                                 <input type="text" id="cvAccNote" class="form-input mt-1 w-full text-sm" placeholder="Nhập ghi chú...">
                             </div>
                             <div class="col-span-2 md:col-span-1 flex items-end">
@@ -584,7 +617,7 @@
                     
                     <div class="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
                         <div class="flex items-center gap-2">
-                            <label class="text-[10px] font-bold text-slate-500 uppercase"><i class="fa-solid fa-filter"></i> Lọc tháng hiển thị:</label>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase"><i class="fa-solid fa-filter"></i> Lọc Theo tháng :</label>
                             <input type="month" id="cvAccFilterMonth" onchange="renderCVAccumulations()" class="form-input !px-2 !py-1 w-auto text-xs font-bold text-[#034C5F] bg-white">
                         </div>
                         <button onclick="document.getElementById('cvAccFilterMonth').value=''; renderCVAccumulations()" class="text-[10px] font-bold text-[#EE6457] hover:text-red-700 bg-white px-2 py-1 rounded border border-[#F9C4BA]">XÓA LỌC</button>
@@ -610,7 +643,7 @@
 
                 <section class="card overflow-hidden flex flex-col h-full border-t-[6px] border-[#EE6457]">
                     <div class="p-4 bg-[#FDF5F4] border-b border-[#F9C4BA] flex justify-between items-center">
-                        <h3 class="font-black text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-calendar-check text-[#EE6457] mr-2"></i>Chốt Số Liệu Tháng</h3>
+                        <h3 class="font-black text-[#034C5F] text-sm uppercase"><i class="fa-solid fa-calendar-check text-[#EE6457] mr-2"></i>Chốt Cv Tháng</h3>
                         <button onclick="exportCVToExcel()" class="bg-white text-[#EE6457] px-3 py-1.5 rounded-lg text-[11px] font-bold border border-[#F9C4BA] hover:bg-[#EE6457] hover:text-white transition-all shadow-sm"><i class="fa-solid fa-file-csv mr-1"></i> Tải Excel</button>
                     </div>
                     
@@ -626,7 +659,7 @@
     </div>
 
    <div class="col-span-3 md:col-span-1"> <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block text-center">Lần</label>
-    <select id="cvMonthEntry" class="form-input mt-1 w-full text-[#034C5F] font-bold text-[11px] bg-white !pl-1 !pr-0 border-rose-200">
+    <select id="cvMonthEntry" class="form-input mt-1 w-full h-10 text-[#034C5F] font-bold text-[11px] bg-white !pl-1 !pr-0 border-rose-200">
         <option value="Lần 1">L1</option>
         <option value="Lần 2">L2</option>
         <option value="Lần 3">L3</option>
@@ -648,7 +681,7 @@
     
     <div class="col-span-8 md:col-span-9">
         <label class="text-[10px] font-bold text-rose-500 uppercase mb-1 block">Ghi chú </label>
-        <input type="text" id="cvMonthNote" class="form-input mt-1 w-full text-xs" placeholder="Ghi chú thêm cho lần này...">
+        <input type="text" id="cvMonthNote" class="form-input mt-1 w-full text-xs" placeholder="Ghi chú ...">
     </div>
     
     <div class="col-span-4 md:col-span-3 flex items-end">
@@ -670,7 +703,7 @@
                         <table class="w-full text-left text-sm min-w-[600px]">
                             <thead class="bg-[#034C5F] text-[11px] font-black uppercase sticky top-0 z-10 shadow-sm">
     <tr>
-        <th class="p-3 text-center border-r border-black/10 text-black bg-gray-100">Tháng</th>
+        <th class="p-3 text-center border-r border-black/10 text-black bg-White">Tháng</th>
         
         <th class="p-3 text-right text-emerald-700">Tổng Tiền Tích<br></th>
         
@@ -710,7 +743,7 @@
 
     <div id="exportModal" class="fixed inset-0 bg-[#034C5F]/80 hidden z-50 flex items-center justify-center p-4 backdrop-blur-md">
         <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-2 border-[#F9C4BA]">
-            <h3 class="text-[#034C5F] font-black text-xl mb-4 text-center uppercase">Xuất dữ liệu Excel</h3>
+            <h3 class="text-[#034C5F] font-black text-xl mb-4 text-center uppercase">Xuất Excel</h3>
             <div class="space-y-4">
                 <div><label class="text-[10px] font-bold text-[#97BEC6] uppercase block mb-1">Tên File</label><input type="text" id="exportFileName" class="form-input !pl-3" placeholder="Ví dụ: Don_Hang_Thang_10"></div>
                 <div><label class="text-[10px] font-bold text-[#97BEC6] uppercase block mb-1">Từ ngày</label><input type="date" id="exportStartDate" class="form-input !pl-3"></div>

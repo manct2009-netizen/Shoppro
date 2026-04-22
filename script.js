@@ -670,79 +670,83 @@ showToast("Đã lưu đồng bộ thành công!");
             if(t === 'customers') renderCustomerCRM();
             if(t === 'cv') { initCVSummaryFilters(); renderAllCV(); }
         }
-
-        function renderCustomerCRM() {
-            const tbody = document.getElementById('customerTableBody');
-            if(!tbody) return;
-            const spendings = {}; orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
-            const CUSTOMER_STATUS_STYLES = { "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" };
-            const sortMode = document.getElementById('customerSortOrder').value; const keys = Object.keys(customers);
-            keys.sort((a, b) => {
-                if (sortMode === 'newest') return (customers[b].timestamp || 0) - (customers[a].timestamp || 0);
-                else if (sortMode === 'oldest') return (customers[a].timestamp || 0) - (customers[b].timestamp || 0);
-                else if (sortMode === 'name') return customers[a].name.localeCompare(customers[b].name);
-                else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); return 0;
-            });
-            
-            const today = new Date();
-            const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
-            const todayDate = String(today.getDate()).padStart(2, '0');
-            const todayMMDD = `${todayMonth}-${todayDate}`;
-
-            tbody.innerHTML = keys.map((phone, index) => {
-                const c = customers[phone]; if(!c) return ""; 
-                const currentStatus = c.status || 'Vãn lai'; const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
-                
-                let bdayMMDD = c.birthday ? c.birthday.substring(5) : "";
-                let isBdayToday = (bdayMMDD === todayMMDD);
-                let bdayClass = isBdayToday ? "birthday-today" : "bg-light-pink";
-
-                let anniMMDD = c.anniversary ? c.anniversary.substring(5) : "";
-                let isAnniToday = (anniMMDD === todayMMDD);
-                let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
-                
-                                return `<tr>
-                    <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
-                    
-                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-textarea font-bold text-[#034C5F]">${c.name}</textarea></td>
-                    
-                    <td class="p-3">${phone}</td>
-                    
-                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-textarea">${c.address||''}</textarea></td>
-                    
-                    <td class="p-3"><input type="text" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer flatpickr-date ${bdayClass}" placeholder="DD/MM/YYYY"></td>
-                    <td class="p-3"><input type="text" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input cursor-pointer flatpickr-date text-[#EE6457] ${anniClass}" placeholder="DD/MM/YYYY"></td>
-                    
-                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-textarea">${c.job||''}</textarea></td>
-                    
-                    <td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td>
-                    
-                    <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-textarea italic text-slate-600">${c.note||''}</textarea></td>
-                    
-                    <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
-                    <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>`;
-
-            }).join('');
-
-            // Thêm một biến cục bộ phía trên cùng file (dưới biến orders, customers...):
-// let datePickerInstances = [];
-
-if (typeof flatpickr !== "undefined") {
-    // Xóa các lịch cũ đi trước khi khởi tạo lại
-    if (window.datePickerInstances && window.datePickerInstances.length > 0) {
-        window.datePickerInstances.forEach(instance => instance.destroy());
-    }
+function renderCustomerCRM() {
+    const tbody = document.getElementById('customerTableBody');
+    if(!tbody) return;
     
-    // Lưu lại danh sách các lịch mới tạo
-    window.datePickerInstances = flatpickr(".flatpickr-date", {
-        dateFormat: "Y-m-d",
-        altInput: true,
-        // ... giữ nguyên các cài đặt cũ của bạn
+    const spendings = {}; 
+    orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
+    const CUSTOMER_STATUS_STYLES = { "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" };
+    const sortMode = document.getElementById('customerSortOrder').value; 
+    
+    // Đổi hằng số const sang biến let để có thể lọc bớt dữ liệu
+    let keys = Object.keys(customers);
+
+    // BẮT ĐẦU: LOGIC TÌM KIẾM
+    const searchInput = document.getElementById('searchCustomerInput');
+    if (searchInput && searchInput.value) {
+        const query = searchInput.value.toLowerCase().trim();
+        keys = keys.filter(phone => {
+            const c = customers[phone];
+            // Lọc nếu chuỗi tìm kiếm nằm trong số điện thoại HOẶC tên khách hàng
+            return phone.includes(query) || (c && c.name && c.name.toLowerCase().includes(query));
+        });
+    }
+    // KẾT THÚC: LOGIC TÌM KIẾM
+
+    // Sắp xếp dữ liệu (Sau khi đã lọc)
+    keys.sort((a, b) => {
+        if (sortMode === 'newest') return (customers[b].timestamp || 0) - (customers[a].timestamp || 0);
+        else if (sortMode === 'oldest') return (customers[a].timestamp || 0) - (customers[b].timestamp || 0);
+        else if (sortMode === 'name') return customers[a].name.localeCompare(customers[b].name);
+        else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); return 0;
     });
+    
+    const today = new Date();
+    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
+    const todayDate = String(today.getDate()).padStart(2, '0');
+    const todayMMDD = `${todayMonth}-${todayDate}`;
+
+    // Đổ dữ liệu ra màn hình
+    tbody.innerHTML = keys.map((phone, index) => {
+        const c = customers[phone]; if(!c) return ""; 
+        const currentStatus = c.status || 'Vãn lai'; const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
+        
+        let bdayMMDD = c.birthday ? c.birthday.substring(5) : "";
+        let isBdayToday = (bdayMMDD === todayMMDD);
+        let bdayClass = isBdayToday ? "birthday-today" : "bg-light-pink";
+
+        let anniMMDD = c.anniversary ? c.anniversary.substring(5) : "";
+        let isAnniToday = (anniMMDD === todayMMDD);
+        let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
+        
+        return `<tr>
+            <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
+            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-textarea font-bold text-[#034C5F]">${c.name}</textarea></td>
+            <td class="p-3">${phone}</td>
+            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-textarea">${c.address||''}</textarea></td>
+            <td class="p-3"><input type="text" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer flatpickr-date ${bdayClass}" placeholder="DD/MM/YYYY"></td>
+            <td class="p-3"><input type="text" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input cursor-pointer flatpickr-date text-[#EE6457] ${anniClass}" placeholder="DD/MM/YYYY"></td>
+            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-textarea">${c.job||''}</textarea></td>
+            <td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td>
+            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-textarea italic text-slate-600">${c.note||''}</textarea></td>
+            <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
+            <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
+        </tr>`;
+    }).join('');
+
+    // Khởi tạo lại Lịch cho các dòng mới render ra
+    if (typeof flatpickr !== "undefined") {
+        if (window.datePickerInstances && window.datePickerInstances.length > 0) {
+            window.datePickerInstances.forEach(instance => instance.destroy());
+        }
+        window.datePickerInstances = flatpickr(".flatpickr-date", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+        });
+    }
 }
 
-        }
         function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
         function deleteCustomer(p) { if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) { delete customers[p]; saveCRM(); } }
         function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('orderDate').valueAsDate = new Date(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
@@ -847,7 +851,8 @@ function openInvoice(id) {
         </div>`; 
         
     document.getElementById('invoiceModal').classList.remove('hidden'); 
-}
+}           
+
 
   function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); const today = new Date(); document.getElementById('exportStartDate').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; document.getElementById('exportEndDate').value = today.toISOString().split('T')[0]; document.getElementById('exportFileName').value = `Don_Hang_Thang_${today.getMonth()+1}`; }
         function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
