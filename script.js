@@ -159,133 +159,10 @@ const firebaseConfig = {
         let cvAccumulations = [];
         let cvMonthlyStats = {};
         
-// HÀM KIỂM TRA VÀ TẠO GIAO DIỆN THÔNG BÁO
-function checkAndShowEvents() {
-    const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-    const currentYear = new Date().getFullYear();
-    let birthdays = [];
-    let anniversaries = [];
-
-    for (let phone in customers) {
-        const c = customers[phone];
-        
-        // Tính tuổi sinh nhật
-        if (c.birthday) {
-            const parts = c.birthday.split('-');
-            if (parts.length >= 3 && parts[1] === currentMonth) {
-                const age = currentYear - parseInt(parts[0], 10);
-                birthdays.push({ ...c, phone, age });
-            }
-        }
-        
-        // Tính số năm kỷ niệm (từ 1 năm trở lên)
-        if (c.anniversary) {
-            const parts = c.anniversary.split('-');
-            if (parts.length >= 3 && parts[1] === currentMonth) {
-                const yearsPassed = currentYear - parseInt(parts[0], 10);
-                if (yearsPassed >= 1) {
-                    anniversaries.push({ ...c, phone, yearsPassed });
-                }
-            }
-        }
-    }
-
-    const total = birthdays.length + anniversaries.length;
-    const bellBtn = document.getElementById('notificationBell');
-    const bellBadge = document.getElementById('notificationBadge');
-    const notifMenu = document.getElementById('notificationMenu');
-
-    if (total > 0) {
-        bellBtn.classList.remove('hidden');
-        bellBadge.classList.remove('hidden');
-        bellBadge.innerText = total;
-
-        let contentHtml = '';
-
-        if (birthdays.length > 0) {
-            contentHtml += `
-                <div class="mb-5">
-                    <h4 class="text-[12px] font-black text-blue-500 uppercase mb-3 flex items-center gap-2 border-b border-blue-100 pb-2">
-                        <i class="fa-solid fa-cake-candles text-blue-400"></i> Sinh nhật (${birthdays.length})
-                    </h4>
-                    <ul class="space-y-2">
-                        ${birthdays.map(c => `
-                            <li class="flex justify-between items-center bg-blue-50/70 p-3 rounded-xl border border-blue-100 hover:bg-blue-100/50 transition-colors">
-                                <div>
-                                    <p class="font-bold text-[#034C5F] text-[13px]">${c.name}</p>
-                                    <p class="text-[11px] text-slate-500 font-medium">${c.phone}</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-[12px] block text-blue-600 font-black">${c.age} tuổi</span>
-                                    <span class="text-[10px] font-bold text-slate-400">${c.birthday.split('-').reverse().join('/')}</span>
-                                </div>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            `;
-        }
-
-        if (anniversaries.length > 0) {
-            contentHtml += `
-                <div>
-                    <h4 class="text-[12px] font-black text-emerald-500 uppercase mb-3 flex items-center gap-2 border-b border-emerald-100 pb-2">
-                        <i class="fa-solid fa-heart text-emerald-400"></i> Kỷ niệm (${anniversaries.length})
-                    </h4>
-                    <ul class="space-y-2">
-                        ${anniversaries.map(c => `
-                            <li class="flex justify-between items-center bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 hover:bg-emerald-100/50 transition-colors">
-                                <div>
-                                    <p class="font-bold text-[#034C5F] text-[13px]">${c.name}</p>
-                                    <p class="text-[11px] text-slate-500 font-medium">${c.phone}</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-[12px] block text-emerald-600 font-black">${c.yearsPassed} năm</span>
-                                    <span class="text-[10px] font-bold text-slate-400">${c.anniversary.split('-').reverse().join('/')}</span>
-                                </div>
-                            </li>
-                        `).join('')}
-                    </ul>
-                </div>
-            `;
-        }
-
-        notifMenu.innerHTML = contentHtml;
-    } else {
-        bellBtn.classList.add('hidden');
-        notifMenu.innerHTML = '';
-    }
-}
-
-// HÀM ĐÓNG/MỞ DROPDOWN (BẢNG THÔNG BÁO)
-// Thay thế hàm cũ bằng hàm này
-function toggleNotificationMenu() {
-    const menu = document.getElementById('notificationMenu');
-    menu.classList.toggle('hidden');
-    
-    const closeMenu = (e) => {
-        const container = document.getElementById('notificationMenuContainer');
-        // Nếu click ra ngoài container
-        if (container && !container.contains(e.target)) {
-            menu.classList.add('hidden');
-            document.removeEventListener('click', closeMenu);
-        }
-    };
-    
-    // Luôn xóa event cũ trước khi gán event mới để tránh trùng lặp
-    document.removeEventListener('click', closeMenu);
-    
-    if (!menu.classList.contains('hidden')) {
-        setTimeout(() => document.addEventListener('click', closeMenu), 10);
-    }
-}
 
 
-
-
-
-        const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
-        function formatCurrencyInput(input) { let value = input.value.replace(/\D/g, ""); if (value !== "") { input.value = new Intl.NumberFormat('en-US').format(value); } else { input.value = ""; } }
+       const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+       function formatCurrencyInput(input) { let value = input.value.replace(/\D/g, ""); if (value !== "") { input.value = new Intl.NumberFormat('en-US').format(value); } else { input.value = ""; } }
         function parseCurrency(str) { if (!str) return 0; return parseInt(String(str).replace(/\D/g, ""), 10) || 0; }
 
         function backupData() {
@@ -367,25 +244,49 @@ function toggleNotificationMenu() {
             const datalist = document.getElementById('productDataList');
             datalist.innerHTML = inventory.map(p => `<option value="${p.name}">Kho: ${p.qty} | Giá: ${formatMoney(p.price)}</option>`).join('');
         }
-        function addProductRow(name = "", price = "", qty = 1) {
-            const container = document.getElementById('product-list');
-            const div = document.createElement('div');
-            const formattedPrice = price ? new Intl.NumberFormat('en-US').format(price) : "";
-            div.className = "grid grid-cols-1 sm:grid-cols-[2fr,1fr,0.5fr,auto] gap-2 bg-white p-3 border border-soft-pink rounded-xl items-center shadow-sm product-row";
-            div.innerHTML = `
-                <div class="input-group">
-                    <i class="fa-solid fa-cube input-icon"></i>
-                    <input type="text" class="form-input p-name" placeholder="Tên SP..." value="${name}" list="productDataList" onchange="autoFillProductPrice(this)">
-                </div>
-                <div class="input-group">
-                    <i class="fa-solid fa-money-bill-1-wave input-icon"></i>
-                    <input type="text" inputmode="numeric" class="form-input p-price font-bold text-[#034C5F]" placeholder="Giá (₫)" value="${formattedPrice}" oninput="formatCurrencyInput(this); calculateTotal()">
-                </div>
-                <input type="number" class="form-input !pl-3 p-qty text-center" value="${qty}" oninput="calculateTotal()">
-                <button type="button" onclick="this.parentElement.remove(); calculateTotal()" class="text-[#F9C4BA] hover:text-[#EE6457] p-2 transition-colors"><i class="fa-solid fa-trash-can text-lg"></i></button>`;
-            container.appendChild(div);
-            calculateTotal();
-        }
+      // HÀM MỚI: Xử lý tăng/giảm số lượng bằng nút bấm
+function updateQty(btn, change) {
+    const input = btn.parentElement.querySelector('.p-qty');
+    let currentVal = parseInt(input.value) || 0;
+    let newVal = currentVal + change;
+    if (newVal < 1) newVal = 1; // Giới hạn không cho giảm dưới 1
+    input.value = newVal;
+    calculateTotal();
+}
+
+// THAY THẾ HÀM addProductRow CŨ
+function addProductRow(name = "", price = "", qty = 1) {
+    const container = document.getElementById('product-list');
+    if (!container) return; 
+
+    const div = document.createElement('div');
+    const formattedPrice = price ? new Intl.NumberFormat('en-US').format(price) : "";
+    
+    // Đã căn chỉnh lại grid-cols để vừa vặn thêm khối Tăng/Giảm
+    div.className = "grid grid-cols-1 sm:grid-cols-[2fr,1fr,auto,auto] gap-2 bg-white p-3 border border-soft-pink rounded-xl items-center shadow-sm product-row";
+    
+    div.innerHTML = `
+        <div class="input-group">
+            <i class="fa-solid fa-cube input-icon"></i>
+            <input type="text" class="form-input p-name" placeholder="Tên SP..." value="${name}" list="productDataList" onchange="autoFillProductPrice(this)">
+        </div>
+        <div class="input-group">
+            <i class="fa-solid fa-money-bill-1-wave input-icon"></i>
+            <input type="text" inputmode="numeric" class="form-input p-price font-bold text-[#034C5F]" placeholder="Giá (₫)" value="${formattedPrice}" oninput="formatCurrencyInput(this); calculateTotal()">
+        </div>
+        
+            <div class="flex items-center justify-between border border-[#8dddf7] rounded-xl overflow-hidden bg-white h-[46px]">
+            <button type="button" onclick="updateQty(this, -1)" class="px-1 h-full text-[#034C5F] hover:bg-[#97BEC6]/50 transition-colors flex items-center justify-center"><i class="fa-solid fa-minus text-xs"></i></button>
+            <input type="number" class="w-10 h-full text-center p-qty font-black text-[#034C5F] outline-none bg-transparent" value="${qty}" min="1" oninput="calculateTotal()" style="-moz-appearance: textfield;">
+            <button type="button" onclick="updateQty(this, 1)" class="px-1 h-full text-[#034C5F] hover:bg-[#97BEC6]/50 transition-colors flex items-center justify-center"><i class="fa-solid fa-plus text-xs"></i></button>
+        </div>
+
+        <button type="button" onclick="this.parentElement.remove(); calculateTotal()" class="text-[#F9C4BA] hover:text-[#EE6457] p-2 transition-colors flex items-center justify-center"><i class="fa-solid fa-trash-can text-lg"></i></button>
+    `;
+    container.appendChild(div);
+    calculateTotal();
+}
+
         function autoFillProductPrice(inputElement) {
             const val = inputElement.value;
             const pName = inventory.find(p => p.name === val) ? val : inventory.find(p => inputElement.value.includes(p.name))?.name;
@@ -400,26 +301,37 @@ function toggleNotificationMenu() {
             }
         }
         function calculateTotal() {
-            let subtotal = 0;
-            const nameInputs = document.querySelectorAll('.p-name');
-const priceInputs = document.querySelectorAll('.p-price');
-const qtyInputs = document.querySelectorAll('.p-qty');
+    let subtotal = 0;
+    const nameInputs = document.querySelectorAll('.p-name');
+    const priceInputs = document.querySelectorAll('.p-price');
+    const qtyInputs = document.querySelectorAll('.p-qty');
 
-nameInputs.forEach((el, idx) => {
-    const price = parseCurrency(priceInputs[idx].value) || 0;
-    const qty = parseFloat(qtyInputs[idx].value) || 0;
-    // ...
-});
-
-            const ship = parseFloat(document.getElementById('shipFee').value) || 0;
-            const dVal = parseFloat(document.getElementById('discountVal').value) || 0;
-            const dType = document.getElementById('discountType').value;
-            let disc = dType === 'percent' ? subtotal * (dVal/100) : dVal;
-            let total = Math.max(0, subtotal - disc - ship);
-            document.getElementById('finalTotal').innerText = formatMoney(total);
-            return { subtotal, total };
-        }
+    nameInputs.forEach((el, idx) => {
+        const price = parseCurrency(priceInputs[idx].value) || 0;
+        const qty = parseFloat(qtyInputs[idx].value) || 0;
         
+        // SỬA LỖI 1: Cộng dồn tiền của từng sản phẩm (Giá x Số lượng) vào Tổng tạm tính
+        if (el.value) { // Chỉ cộng nếu có nhập tên sản phẩm
+            subtotal += price * qty;
+        }
+    });
+
+    const ship = parseFloat(document.getElementById('shipFee').value) || 0;
+    const dVal = parseFloat(document.getElementById('discountVal').value) || 0;
+    const dType = document.getElementById('discountType').value;
+    
+    // Tính số tiền giảm giá
+    let disc = dType === 'percent' ? subtotal * (dVal/100) : dVal;
+    
+    // Phi Van Chuyen
+    let total = Math.max(0, subtotal - disc + ship);
+    
+    // Hiển thị ra giao diện
+    document.getElementById('finalTotal').innerText = formatMoney(total);
+    
+    return { subtotal, total };
+}
+
         function saveOrder() {
             const phone = document.getElementById('custPhone').value.trim();
             const name = document.getElementById('custName').value.trim();
@@ -617,68 +529,85 @@ showToast("Đã lưu đồng bộ thành công!");
 
 
                 function renderAnalytics() {
-            const start = document.getElementById('filterStart').value;
-            const end = document.getElementById('filterEnd').value;
-            
-            let validOrders = orders.filter(o => {
-                const targetDate = o.orderDate || o.date;
-                return o.status !== "Đã Hủy" && o.status !== "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
-            });
-            let bomOrders = orders.filter(o => {
-                const targetDate = o.orderDate || o.date;
-                return o.status === "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
-            });
+    const startInput = document.getElementById('filterStart');
+    const endInput = document.getElementById('filterEnd');
+    
+    // --- ĐOẠN CODE THÊM MỚI: ÉP ĐIỀN NGÀY KHI BẤM SANG TAB BÁO CÁO ---
+    if (!startInput.value || !endInput.value) {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        // Điều chỉnh múi giờ (Timezone) chuẩn Việt Nam để không bị lệch ngày
+        today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+        firstDay.setMinutes(firstDay.getMinutes() - firstDay.getTimezoneOffset());
+        
+        if (!startInput.value) startInput.value = firstDay.toISOString().split('T')[0];
+        if (!endInput.value) endInput.value = today.toISOString().split('T')[0];
+    }
+    // -----------------------------------------------------------------
 
-            let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
-            let sCollected = 0; // Thêm biến lưu Đã Thu
-            let dailyRevenue = {}; 
+    const start = startInput.value;
+    const end = endInput.value;
+    
+    let validOrders = orders.filter(o => {
+        const targetDate = o.orderDate || o.date;
+        return o.status !== "Đã Hủy" && o.status !== "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
+    });
+    let bomOrders = orders.filter(o => {
+        const targetDate = o.orderDate || o.date;
+        return o.status === "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
+    });
 
-            validOrders.forEach(o => {
-                const net = o.total - o.shipFee; // Lợi nhuận không tính ship
-                grandTotal += net;               // Doanh thu tổng giữ nguyên
-                
-                // CỘNG VÀO ĐÃ THU NẾU ĐƠN CÓ TÍCH XANH (isPaid = true)
-                if(o.isPaid) {
-                    sCollected += net;
-                }
-                const targetDate = o.orderDate || o.date;
-                if(dailyRevenue[targetDate]) dailyRevenue[targetDate] += net; else dailyRevenue[targetDate] = net;
-                o.products.forEach(p => {
-                    const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
-                    if(OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k))) sOut += ratio * net; else sVnl += ratio * net;
-                });
-                if(o.customer.type === 'ttd') sTtd += net; else sNew += net;
-            });
-            
-            let bomTotalValue = bomOrders.reduce((sum, o) => sum + o.total, 0);
+    let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
+    let sCollected = 0; 
+    let dailyRevenue = {}; 
 
-            // TÍNH TỔNG TIỀN TÍCH LŨY TRONG GIAI ĐOẠN ĐƯỢC CHỌN LỌC
-            let sAccumulated = 0;
-            cvAccumulations.forEach(acc => {
-                if (acc.date && (!start || acc.date >= start) && (!end || acc.date <= end)) {
-                    sAccumulated += acc.amount;
-                }
-            });
-
-            // THU NHẬP = ĐÃ THU - TÍCH LŨY
-            let sIncome = sCollected - sAccumulated;
-
-            document.getElementById('statOut').innerText = formatMoney(sOut); 
-            document.getElementById('statVnl').innerText = formatMoney(sVnl);
-            document.getElementById('statNew').innerText = formatMoney(sNew); 
-            document.getElementById('statTtd').innerText = formatMoney(sTtd);
-            document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal); 
-            document.getElementById('statTotalOrders').innerText = validOrders.length;
-            document.getElementById('statAvgOrder').innerText = validOrders.length ? formatMoney(grandTotal/validOrders.length) : '0 ₫';
-            document.getElementById('statBomCount').innerText = bomOrders.length; 
-            document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
-            
-            // XUẤT RA GIAO DIỆN MỚI
-            document.getElementById('statCollected').innerText = formatMoney(sCollected);
-            document.getElementById('statIncome').innerText = formatMoney(sIncome);
-
-            drawRevenueChart(dailyRevenue);
+    validOrders.forEach(o => {
+        const net = o.total - o.shipFee; // Lợi nhuận không tính ship
+        grandTotal += net;               // Doanh thu tổng giữ nguyên
+        
+        // CỘNG VÀO ĐÃ THU NẾU ĐƠN CÓ TÍCH XANH (isPaid = true)
+        if(o.isPaid) {
+            sCollected += net;
         }
+        const targetDate = o.orderDate || o.date;
+        if(dailyRevenue[targetDate]) dailyRevenue[targetDate] += net; else dailyRevenue[targetDate] = net;
+        o.products.forEach(p => {
+            const ratio = o.subtotal > 0 ? (p.price * p.qty / o.subtotal) : 0;
+            if(OUT_KEYWORDS.some(k => p.name.toUpperCase().includes(k))) sOut += ratio * net; else sVnl += ratio * net;
+        });
+        if(o.customer.type === 'ttd') sTtd += net; else sNew += net;
+    });
+    
+    let bomTotalValue = bomOrders.reduce((sum, o) => sum + o.total, 0);
+
+    // TÍNH TỔNG TIỀN TÍCH LŨY TRONG GIAI ĐOẠN ĐƯỢC CHỌN LỌC
+    let sAccumulated = 0;
+    cvAccumulations.forEach(acc => {
+        if (acc.date && (!start || acc.date >= start) && (!end || acc.date <= end)) {
+            sAccumulated += acc.amount;
+        }
+    });
+
+    // THU NHẬP = ĐÃ THU - TÍCH LŨY
+    let sIncome = sCollected - sAccumulated;
+
+    document.getElementById('statOut').innerText = formatMoney(sOut); 
+    document.getElementById('statVnl').innerText = formatMoney(sVnl);
+    document.getElementById('statNew').innerText = formatMoney(sNew); 
+    document.getElementById('statTtd').innerText = formatMoney(sTtd);
+    document.getElementById('totalPeriodRevenue').innerText = formatMoney(grandTotal); 
+    document.getElementById('statTotalOrders').innerText = validOrders.length;
+    document.getElementById('statAvgOrder').innerText = validOrders.length ? formatMoney(grandTotal/validOrders.length) : '0 ₫';
+    document.getElementById('statBomCount').innerText = bomOrders.length; 
+    document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
+    
+    // XUẤT RA GIAO DIỆN MỚI
+    document.getElementById('statCollected').innerText = formatMoney(sCollected);
+    document.getElementById('statIncome').innerText = formatMoney(sIncome);
+
+    drawRevenueChart(dailyRevenue);
+}
 
         function drawRevenueChart(dataObj) {
             const ctx = document.getElementById('revenueChart').getContext('2d');
@@ -1264,33 +1193,29 @@ function editCVMonthlyStat(monthKey) {
             showToast("Đã xuất file Excel thống kê CV!");
         }
 
-        document.getElementById('orderDate').valueAsDate = new Date();
-        document.getElementById('shipDate').valueAsDate = new Date(); 
-        document.getElementById('cvAccDate').valueAsDate = new Date();
-        
-        let d = new Date();
-        let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
-        document.getElementById('cvMonthPick').value = currentMonthStr;
+    document.addEventListener('DOMContentLoaded', () => {
+    const orderDateEl = document.getElementById('orderDate');
+    const shipDateEl = document.getElementById('shipDate');
+    const cvAccDateEl = document.getElementById('cvAccDate');
+    const cvMonthPickEl = document.getElementById('cvMonthPick');
 
-        // --- CODE MỚI THÊM: Thiết lập mặc định bộ lọc Báo cáo ---
-        let todayFilter = new Date();
-        let firstDayFilter = new Date(todayFilter.getFullYear(), todayFilter.getMonth(), 1);
-        
-        // Điều chỉnh múi giờ (Timezone) để tránh bị lùi ngày khi dùng toISOString()
-        firstDayFilter.setMinutes(firstDayFilter.getMinutes() - firstDayFilter.getTimezoneOffset());
-        todayFilter.setMinutes(todayFilter.getMinutes() - todayFilter.getTimezoneOffset());
-        
-        // Gán giá trị vào 2 ô Lọc (Từ ngày -> mùng 1; Đến ngày -> hôm nay)
-        if(document.getElementById('filterStart')) {
-            document.getElementById('filterStart').value = firstDayFilter.toISOString().split('T')[0];
-        }
-        if(document.getElementById('filterEnd')) {
-            document.getElementById('filterEnd').value = todayFilter.toISOString().split('T')[0];
-        }
-        // ---------------------------------------------------------
+    if (orderDateEl) orderDateEl.valueAsDate = new Date();
+    if (shipDateEl) shipDateEl.valueAsDate = new Date(); 
+    if (cvAccDateEl) cvAccDateEl.valueAsDate = new Date();
+    
+    let d = new Date();
+    let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
+    if (cvMonthPickEl) cvMonthPickEl.value = currentMonthStr;
 
-        autoSetDeliveryDate(); 
+    if (typeof autoSetDeliveryDate === 'function') autoSetDeliveryDate(); 
+    
+    // Tự động gọi hiển thị sẵn 1 dòng sản phẩm đầu tiên khi vào trang
+    const productList = document.getElementById('product-list');
+    if (productList && productList.children.length === 0) {
         addProductRow();
+    }
+});
+
 
    
   // 1. Đóng/Mở Menu Bánh Răng
@@ -1352,7 +1277,7 @@ function handleLogout() {
         window.location.reload();
     }
 }
-// Hàm giới hạn năm hiển thị cho các ô chọn Ngày/Tháng
+// Hàm giới hạn năm hiển thị cho các ô chọn Ngày/Tháng và Cài đặt mặc định
 function optimizeNativeDatePickers() {
     const currentYear = new Date().getFullYear();
     const minYear = 2018;
@@ -1388,9 +1313,181 @@ function optimizeNativeDatePickers() {
             monthPick.value = `${y}-${m.toString().padStart(2, '0')}`;
         }
     }
+
+    // 3. THIẾT LẬP MẶC ĐỊNH CHO BỘ LỌC BÁO CÁO (Từ mùng 1 đến Hôm nay)
+    const filterStart = document.getElementById('filterStart');
+    const filterEnd = document.getElementById('filterEnd');
+    
+    if (filterStart && filterEnd) {
+        const todayFilter = new Date();
+        const firstDayFilter = new Date(todayFilter.getFullYear(), todayFilter.getMonth(), 1);
+        
+        // Điều chỉnh múi giờ (Timezone) để tránh bị lùi ngày 
+        firstDayFilter.setMinutes(firstDayFilter.getMinutes() - firstDayFilter.getTimezoneOffset());
+        todayFilter.setMinutes(todayFilter.getMinutes() - todayFilter.getTimezoneOffset());
+        
+        // Chỉ gán giá trị mặc định nếu ô đang trống (cho phép người dùng tự đổi ngày khác)
+        if (!filterStart.value) {
+            filterStart.value = firstDayFilter.toISOString().split('T')[0];
+        }
+        if (!filterEnd.value) {
+            filterEnd.value = todayFilter.toISOString().split('T')[0];
+        }
+    }
 }
 
 // Gọi hàm ngay khi web load xong
 document.addEventListener('DOMContentLoaded', optimizeNativeDatePickers);
 
+// TÍNH NĂNG THÔNG BÁO SINH NHẬT & KỶ NIỆM
+// ========================================================
+
+function checkAndShowEvents() {
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1; // getMonth() trả về 0-11
+    const currentYear = today.getFullYear();
+
+    let events = [];
+
+    // Quét toàn bộ khách hàng
+    for (const phone in customers) {
+        const c = customers[phone];
         
+        // 1. Kiểm tra Sinh nhật
+        if (c.birthday) {
+            const [bYear, bMonth, bDay] = c.birthday.split('-');
+            if (parseInt(bMonth) === currentMonth) {
+                const age = currentYear - parseInt(bYear);
+                events.push({
+                    type: 'birthday',
+                    name: c.name,
+                    phone: phone,
+                    date: `${bDay}/${bMonth}`,
+                    number: age > 0 ? age : 0, // Tuổi
+                    sortDay: parseInt(bDay)
+                });
+            }
+        }
+
+        // 2. Kiểm tra Kỷ niệm (Chỉ lấy >= 1 năm)
+        if (c.anniversary) {
+            const [aYear, aMonth, aDay] = c.anniversary.split('-');
+            if (parseInt(aMonth) === currentMonth) {
+                const years = currentYear - parseInt(aYear);
+                if (years >= 1) { // Điều kiện >= 1 năm
+                    events.push({
+                        type: 'anniversary',
+                        name: c.name,
+                        phone: phone,
+                        date: `${aDay}/${aMonth}`,
+                        number: years, // Số năm kỷ niệm
+                        sortDay: parseInt(aDay)
+                    });
+                }
+            }
+        }
+    }
+
+    // Sắp xếp sự kiện theo ngày tăng dần trong tháng
+    events.sort((a, b) => a.sortDay - b.sortDay);
+
+    // Render ra UI
+    const dot = document.getElementById('notificationDot');
+    const countBadge = document.getElementById('notificationCount');
+    const listContainer = document.getElementById('notificationList');
+
+    if (events.length > 0) {
+        dot.classList.remove('hidden');
+        countBadge.innerText = events.length;
+        
+        let html = '';
+        events.forEach(e => {
+            if (e.type === 'birthday') {
+                html += `
+                    <div class="p-2.5 bg-pink-30 rounded-xl border border-pink-100 flex items-center gap-3 hover:bg-pink-100 transition-colors cursor-default">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-pink-100 to-pink-250 text-pink-600 flex items-center justify-center shrink-0 shadow-inner">
+                            <i class="fa-solid fa-cake-candles"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-black text-[#034C5F] truncate">${e.name}</p>
+                            <p class="text-[10px] text-slate-500 font-semibold mb-0.5">${e.phone}</p>
+                            <p class="text-[10px] font-bold text-Slate-500 bg-pink-150 inline-block px-1.5 py-0.5 rounded">
+                                Ngày ${e.date} <span class="text-slate-500">(${e.number} tuổi)</span>
+                            </p>
+                        </div>
+                    </div>`;
+            } else {
+                html += `
+                    <div class="p-2.5 bg-blue-30 rounded-xl border border-blue-100 flex items-center gap-3 hover:bg-blue-100 transition-colors cursor-default">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-blue-250 text-blue-600 flex items-center justify-center shrink-0 shadow-inner">
+                            <i class="fa-solid fa-heart"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-black text-[#034C5F] truncate">${e.name}</p>
+                            <p class="text-[10px] text-slate-500 font-semibold mb-0.5">${e.phone}</p>
+                            <p class="text-[10px] font-bold text-slate-500 bg-blue-150 inline-block px-1.5 py-0.5 rounded">
+                                Ngày ${e.date} <span class="text-slate-500">(${e.number} năm)</span>
+                            </p>
+                        </div>
+                    </div>`;
+            }
+        });
+        listContainer.innerHTML = html;
+    } else {
+        dot.classList.add('hidden');
+        countBadge.innerText = '0';
+        listContainer.innerHTML = `
+            <div class="py-8 text-center text-slate-400 flex flex-col items-center justify-center h-full">
+                <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-2">
+                    <i class="fa-regular fa-bell-slash text-xl text-slate-300"></i>
+                </div>
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Trống</p>
+                <p class="text-[10px] mt-1">Tháng này không có sự kiện.</p>
+            </div>`;
+    }
+}
+
+// Hàm mở/đóng danh sách thông báo
+function toggleNotificationMenu() {
+    const menu = document.getElementById('notificationMenu');
+    menu.classList.toggle('hidden');
+    
+    // Đóng luôn menu cài đặt nếu đang mở để tránh đè lên nhau
+    document.getElementById('settingsMenu').classList.add('hidden');
+    
+    // Đóng khi click ra ngoài
+    const closeMenu = (e) => {
+        if (!document.getElementById('notificationMenuContainer').contains(e.target)) {
+            menu.classList.add('hidden');
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    
+    if (!menu.classList.contains('hidden')) {
+        setTimeout(() => document.addEventListener('click', closeMenu), 10);
+    } else {
+        document.removeEventListener('click', closeMenu);
+    }
+}
+
+// Cập nhật lại hàm toggleSettingsMenu cũ để nó cũng tự động đóng bảng thông báo
+function toggleSettingsMenu() {
+    const menu = document.getElementById('settingsMenu');
+    menu.classList.toggle('hidden');
+    
+    // THÊM DÒNG NÀY: Đóng bảng thông báo nếu đang mở
+    document.getElementById('notificationMenu').classList.add('hidden');
+    
+    const closeMenu = (e) => {
+        if (!document.getElementById('settingsMenuContainer').contains(e.target)) {
+            menu.classList.add('hidden');
+            document.removeEventListener('click', closeMenu);
+        }
+    };
+    
+    if (!menu.classList.contains('hidden')) {
+        setTimeout(() => document.addEventListener('click', closeMenu), 10);
+    } else {
+        document.removeEventListener('click', closeMenu);
+    }
+}
