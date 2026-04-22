@@ -55,13 +55,16 @@
                 <div class="text-left relative">
                     <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Vui lòng nhập mật khẩu</label>
                     <input type="password" id="empPassword" onkeydown="if(event.key === 'Enter') handleLogin()" class="w-full px-4 py-3 rounded-2xl border-2 border-[#FDF5F4] bg-[#FDF5F4] focus:border-[#034C5F] focus:bg-white outline-none text-center font-black text-xl text-[#034C5F] transition-all shadow-inner" placeholder="••••••••">
-                    
-                    <div class="text-right mt-1.5 mr-1">
-                        <button type="button" onclick="handleForgotPassword()" class="text-[11px] font-bold text-[#EE6457] hover:text-[#d85449] transition-colors cursor-pointer tracking-wider">
-                            Quên mật khẩu?
-                        </button>
-                    </div>
-                </div>
+<div class="flex justify-between mt-1.5 px-1">
+    <button type="button" onclick="openRegisterModal()" class="text-[11px] font-bold text-[#86efac] hover:text-[#4ade80] transition-colors cursor-pointer tracking-wider">
+        + Tạo tài khoản
+    </button>
+    <button type="button" onclick="handleForgotPassword()" class="text-[11px] font-bold text-[#EE6457] hover:text-[#d85449] transition-colors cursor-pointer tracking-wider">
+        Quên mật khẩu?
+    </button>
+</div>
+
+      </div>
                 
                 <button onclick="handleLogin()" class="w-full py-4 mt-2 bg-[#EE6457] text-white rounded-2xl font-black uppercase text-sm hover:bg-[#d85449] hover:scale-[1.02] transition-all shadow-lg flex items-center justify-center gap-2">
                     Vào Hệ Thống <i class="fa-solid fa-arrow-right-to-bracket"></i>
@@ -98,6 +101,43 @@
                 </button>
                 <button onclick="submitForgotPassword()" class="flex-1 py-3.5 bg-gradient-to-r from-[#034C5F] to-[#065a71] border border-white/20 text-white rounded-2xl font-black uppercase text-xs shadow-[0_4px_15px_rgba(3,76,95,0.3)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(134,239,172,0.4)] transition-all">
                     Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+        <div id="registerModal" class="fixed inset-0 bg-[#034C5F]/95 z-[105] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
+               <div class="bg-white/10 backdrop-blur-xl p-8 rounded-[32px] w-full max-w-md relative z-10 border-2 border-[rgba(56,189,248,0.6)] shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
+
+        <div class="w-16 h-16 bg-[#FDF5F4] text-[#97BEC6] rounded-2xl mx-auto flex items-center justify-center text-3xl mb-4 shadow-inner border border-[#F9C4BA]">
+            <i class="fa-solid fa-user-plus"></i>
+        </div>
+        
+        <h2 class="text-2xl font-black text-[#FFFFFF] tracking-tight uppercase mb-1 text-center">Tạo Tài Khoản Mới</h2>
+        <p class="text-[10px] font-bold text-[#86efac] uppercase tracking-widest mb-6 text-center">Dành cho nhân viên BNDShop</p>
+        
+        <div class="space-y-4">
+            <div class="text-left">
+                <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Mã xác thực Admin *</label>
+                <input type="password" id="regAdminCode" class="w-full px-4 py-3 rounded-2xl border-2 border-[rgba(56,189,248,0.4)] bg-white/90 focus:border-[#86efac] outline-none text-center font-black text-lg text-[#034C5F] transition-all" placeholder="Nhập mã cấp quyền...">
+            </div>
+
+            <div class="text-left">
+                <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Mã nhân viên mới *</label>
+                <input type="text" id="regEmpCode" class="w-full px-4 py-3 rounded-2xl border-2 border-[rgba(56,189,248,0.4)] bg-white/90 focus:border-[#86efac] outline-none text-center font-black text-lg text-[#034C5F] transition-all uppercase" placeholder="VD: NV001">
+            </div>
+            
+            <div class="text-left relative">
+                <label class="block text-[11px] font-bold text-[#97BEC6] uppercase ml-1 mb-1">Mật khẩu *</label>
+                <input type="password" id="regEmpPassword" class="w-full px-4 py-3 rounded-2xl border-2 border-[rgba(56,189,248,0.4)] bg-white/90 focus:border-[#86efac] outline-none text-center font-black text-lg text-[#034C5F] transition-all" placeholder="Nhập mật khẩu">
+            </div>
+            
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeRegisterModal()" class="flex-1 py-3.5 bg-transparent border border-white/30 text-white rounded-2xl font-black uppercase text-xs hover:bg-white/10 transition-all">
+                    Hủy
+                </button>
+                <button onclick="submitRegister()" class="flex-1 py-3.5 bg-gradient-to-r from-[#10b981] to-[#047857] border border-white/20 text-white rounded-2xl font-black uppercase text-xs shadow-lg hover:-translate-y-1 transition-all">
+                    Tạo Mới
                 </button>
             </div>
         </div>
@@ -149,6 +189,11 @@
                     </button>
                     
                     <div id="settingsMenu" class="hidden absolute right-0 mt-2 w-48 bg-white backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-sky-300/50 overflow-hidden z-[110] transform origin-top-right transition-all">
+                      <button onclick="openProfileModal()" class="w-full text-left px-4 py-3 hover:bg-blue-50 flex items-center gap-3 text-sm font-bold text-gray-700 border-b border-gray-100 transition-colors">
+    <i class="fa-solid fa-address-card text-blue-500 w-5"></i>
+    Hồ sơ cá nhân
+</button>
+
                         <div class="py-2">
                             <button onclick="openChangePassModal()" class="w-full px-4 py-3 text-left text-sm text-[#034C5F] font-bold hover:bg-sky-100/50 flex items-center gap-3 transition-colors">
                                 <i class="fa-solid fa-key text-sky-500 w-5"></i> Đổi mật khẩu
@@ -167,7 +212,11 @@
                     </div>
                 </div>
             </div>
-            
+<div id="userProfileBadge" class="hidden items-center bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
+    <i class="fa-solid fa-user-tie mr-1.5 text-blue-500"></i>
+    <span id="displayUserName" class="truncate max-w-[100px]">Đang tải...</span>
+</div>
+
 
 
 </header>
@@ -755,6 +804,27 @@
             </div>
         </div>
     </div>
-               
+<div id="profileModal" class="fixed inset-0 bg-black/60 hidden z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border-t-4 border-blue-500">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-[#034C5F] font-black text-xl uppercase">Cập nhật hồ sơ</h3>
+            <button onclick="closeProfileModal()" class="text-gray-400 hover:text-red-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1 ml-1">Tên hiển thị</label>
+                <input type="text" id="profileName" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-blue-400 outline-none transition-all" placeholder="Nhập tên của bạn...">
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-gray-400 uppercase block mb-1 ml-1">Số điện thoại</label>
+                <input type="tel" id="profilePhone" class="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-blue-400 outline-none transition-all" placeholder="09xxxxxxx">
+            </div>
+            <button onclick="saveProfileInfo()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-blue-400 text-white rounded-xl font-black text-sm shadow-lg shadow-blue-200 active:scale-95 transition-all uppercase tracking-wider mt-2">
+                Lưu thay đổi
+            </button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

@@ -18,34 +18,58 @@ const firebaseConfig = {
                // --- BẮT ĐẦU PHẦN XỬ LÝ ĐĂNG NHẬP MỚI ---
         const DEFAULT_PASSWORD = "898989";
 
-        // HÀM XỬ LÝ ĐĂNG NHẬP
-        function handleLogin() {
-            const code = document.getElementById('empCode').value.trim();
-            const pass = document.getElementById('empPassword').value;
+   // HÀM XỬ LÝ ĐĂNG NHẬP MỚI (DÙNG FIREBASE)
+async function handleLogin() {
+    const code = document.getElementById('empCode').value.trim().toUpperCase();
+    const pass = document.getElementById('empPassword').value;
 
-            if (!code) {
-                alert("Vui lòng nhập mã nhân viên!");
-                return;
-            }
-            if (!pass) {
-                alert("Vui lòng nhập mật khẩu!");
-                return;
-            }
+    if (!code || !pass) {
+        alert("Vui lòng nhập đầy đủ mã và mật khẩu!");
+        return;
+    }
 
-            // Kiểm tra mật khẩu (nếu chưa đổi thì lấy mặc định là 898989)
-            const savedPassword = localStorage.getItem(`pass_${code}`) || DEFAULT_PASSWORD;
+    try {
+        // 1. Lấy mật khẩu từ Firebase (Đúng đường dẫn bạn đang dùng)
+        const snapshot = await db.ref('SunsetShopData/Employees/' + code + '/password').once('value');
+        const savedPassword = snapshot.val() || "898989"; 
 
-            if (pass === savedPassword) {
-                // Đăng nhập thành công -> Lưu mã và tải lại trang như hệ thống cũ
-                const upperId = code.toUpperCase();
-                localStorage.setItem('v11_employee_id', upperId);
-                window.location.reload(); 
-            } else {
-                alert("Mã nhân viên hoặc mật khẩu không chính xác!");
-            }
+        if (pass === savedPassword) {
+            // --- ĐĂNG NHẬP THÀNH CÔNG ---
+            
+            // 2. Cập nhật biến toàn cục employeeId (Cực kỳ quan trọng)
+            employeeId = code; 
+            
+            // 3. Lưu vào bộ nhớ máy để lần sau không phải đăng nhập lại
+            localStorage.setItem('v11_employee_id', employeeId);
+            
+            // 4. Thiết lập đường dẫn dữ liệu cá nhân cho user này
+            userRef = db.ref('users/' + employeeId);
+            
+            // 5. Chạy hàm hiển thị tên lên Header (Hàm này bạn đã viết ở Bước 2)
+            listenToUserProfile(); 
+            
+            // 6. Load dữ liệu đơn hàng
+            loadData();
+            
+            // 7. Ẩn bảng đăng nhập để vào app luôn
+            document.getElementById('loginModal').classList.add('hidden');
+
+            // LƯU Ý: Xóa dòng window.location.reload() ở đây.
+            // Nếu reload, trang web sẽ load lại từ đầu và làm gián đoạn luồng dữ liệu.
+
+        } else {
+            // --- SAI MẬT KHẨU ---
+            alert("Mã nhân viên hoặc mật khẩu không chính xác!");
+            // Không reload ở đây để người dùng nhập lại ngay tại chỗ
         }
+    } catch (error) {
+        console.error("Lỗi đăng nhập:", error);
+        alert("Có lỗi kết nối: " + error.message);
+    }
+}
 
-        // HÀM XỬ LÝ QUÊN MẬT KHẨU
+
+
              // MỞ GIAO DIỆN QUÊN MẬT KHẨU
         function handleForgotPassword() {
             const code = document.getElementById('empCode').value.trim();
@@ -69,33 +93,99 @@ const firebaseConfig = {
         }
 
         // XỬ LÝ LƯU MẬT KHẨU KHI NHẬP ĐÚNG MÃ CỦA NHÀ CUNG CẤP
-        function submitForgotPassword() {
-            const code = document.getElementById('empCode').value.trim();
-            const supplierCode = document.getElementById('supplierCodeInput').value;
-            const newPass = document.getElementById('newResetPassInput').value;
+function submitForgotPassword() {
+    const code = document.getElementById('empCode').value.trim().toUpperCase();
+    const supplierCode = document.getElementById('supplierCodeInput').value;
+    const newPass = document.getElementById('newResetPassInput').value;
 
-            // Kiểm tra mật mã của Duy Khang
-            if (supplierCode !== 'admin123') {
-                alert("Mã xác thực của nhà cung cấp không chính xác!");
-                return;
-            }
+    // Kiểm tra mật mã của Duy Khang
+    if (supplierCode !== 'admin123') {
+        alert("Mã xác thực của nhà cung cấp không chính xác!");
+        return;
+    }
 
-            // Kiểm tra xem đã nhập mật khẩu mới chưa
-            if (!newPass) {
-                alert("Vui lòng nhập mật khẩu mới mà bạn muốn đổi!");
-                return;
-            }
+    if (!newPass) {
+        alert("Vui lòng nhập mật khẩu mới mà bạn muốn đổi!");
+        return;
+    }
 
-            // Lưu mật khẩu mới thẳng vào hệ thống
-            localStorage.setItem(`pass_${code}`, newPass);
+    // Lưu mật khẩu mới thẳng vào Firebase của nhân viên đó
+    db.ref('SunsetShopData/Employees/' + code + '/password').set(newPass)
+        .then(() => {
             alert(`Thành công! Mật khẩu của nhân viên ${code} đã được đổi. Vui lòng đăng nhập lại.`);
-            
-            // Đóng Modal và xóa ô pass ở ngoài để người dùng nhập pass mới
             closeForgotPassModal();
             document.getElementById('empPassword').value = ''; 
+        })
+        .catch((error) => {
+            alert("Lỗi khi cấp lại mật khẩu: " + error.message);
+        });
+}
+// MỞ GIAO DIỆN TẠO TÀI KHOẢN
+function openRegisterModal() {
+    // Làm sạch form trước khi mở
+    document.getElementById('regAdminCode').value = '';
+    document.getElementById('regEmpCode').value = '';
+    document.getElementById('regEmpPassword').value = '';
+    
+    document.getElementById('registerModal').classList.remove('hidden');
+    document.getElementById('loginModal').classList.add('hidden'); // Ẩn form login
+}
+
+// ĐÓNG GIAO DIỆN TẠO TÀI KHOẢN
+function closeRegisterModal() {
+    document.getElementById('registerModal').classList.add('hidden');
+    document.getElementById('loginModal').classList.remove('hidden'); // Hiện lại form login
+}
+
+// XỬ LÝ LƯU TÀI KHOẢN MỚI LÊN FIREBASE
+async function submitRegister() {
+    const adminCode = document.getElementById('regAdminCode').value;
+    const newCode = document.getElementById('regEmpCode').value.trim().toUpperCase();
+    const newPass = document.getElementById('regEmpPassword').value;
+
+    // 1. Kiểm tra quyền Admin (Dùng chung mã 'admin123' của Duy Khang)
+    if (adminCode !== 'admin123') {
+        alert("Mã xác thực Admin không chính xác. Bạn không có quyền tạo tài khoản!");
+        return;
+    }
+
+    // 2. Validate dữ liệu
+    if (!newCode || !newPass) {
+        alert("Vui lòng điền đầy đủ Mã nhân viên và Mật khẩu!");
+        return;
+    }
+
+    try {
+        const userNodeRef = db.ref('SunsetShopData/Employees/' + newCode);
+        
+        // 3. Kiểm tra xem mã nhân viên này đã tồn tại chưa
+        const snapshot = await userNodeRef.once('value');
+        if (snapshot.exists()) {
+            alert("Mã nhân viên này đã tồn tại! Vui lòng chọn mã khác.");
+            return;
         }
 
-        // --- KẾT THÚC PHẦN XỬ LÝ ĐĂNG NHẬP MỚI ---
+        // 4. Nếu chưa tồn tại, tiến hành tạo mới. 
+        // Thiết lập cấu trúc cơ bản cho nhân viên mới
+        await userNodeRef.set({
+            password: newPass,
+            created_at: new Date().toISOString(),
+            status: "active"
+            // Hệ thống của bạn sẽ tự động tạo các node v11_orders, v11_customers... khi nhân viên này bắt đầu nhập liệu
+        });
+
+        alert(`Tạo tài khoản thành công cho nhân viên: ${newCode}!\nBây giờ bạn có thể đăng nhập.`);
+        closeRegisterModal();
+        
+        // Tự động điền sẵn mã NV vừa tạo vào form đăng nhập cho tiện
+        document.getElementById('empCode').value = newCode;
+        document.getElementById('empPassword').value = '';
+
+    } catch (error) {
+        alert("Có lỗi xảy ra khi tạo tài khoản: " + error.message);
+    }
+}
+
 
 
         // HÀM XỬ LÝ ĐĂNG XUẤT
@@ -1257,9 +1347,10 @@ function closeChangePassModal() {
 }
 
 // 3. Lưu mật khẩu mới chủ động
+// LƯU MẬT KHẨU MỚI (ĐỔI TRONG CÀI ĐẶT)
 function saveNewPassword() {
     const newPass = document.getElementById('newPassInput').value.trim();
-    const currentEmpId = localStorage.getItem('v11_employee_id'); // Lấy mã nhân viên đang đăng nhập
+    const currentEmpId = localStorage.getItem('v11_employee_id'); 
 
     if (!newPass) {
         alert("Vui lòng nhập mật khẩu mới!");
@@ -1267,13 +1358,20 @@ function saveNewPassword() {
     }
 
     if (currentEmpId) {
-        localStorage.setItem(`pass_${currentEmpId}`, newPass);
-        alert("Đã đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.");
-        closeChangePassModal();
+        // Đẩy mật khẩu mới lên Firebase
+        db.ref('SunsetShopData/Employees/' + currentEmpId + '/password').set(newPass)
+            .then(() => {
+                alert("Đã đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.");
+                closeChangePassModal();
+            })
+            .catch((error) => {
+                alert("Lỗi khi lưu mật khẩu: " + error.message);
+            });
     } else {
         alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại!");
     }
 }
+
 
 // 4. Hàm Đăng xuất
 function handleLogout() {
@@ -1494,5 +1592,73 @@ function toggleSettingsMenu() {
         setTimeout(() => document.addEventListener('click', closeMenu), 10);
     } else {
         document.removeEventListener('click', closeMenu);
+    }
+}
+// 1. Hàm mở Modal và lấy dữ liệu cũ từ Firebase đổ vào Input
+function openProfileModal() {
+    document.getElementById('settingsMenu').classList.add('hidden'); // Đóng menu bánh răng
+    
+    if (userRef) {
+        userRef.once('value').then((snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('profileName').value = data.name || "";
+                document.getElementById('profilePhone').value = data.phone || "";
+            }
+        });
+    }
+    document.getElementById('profileModal').classList.remove('hidden');
+}
+
+// 2. Hàm đóng Modal
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.add('hidden');
+}
+
+// 3. Hàm lưu dữ liệu lên Firebase
+async function saveProfileInfo() {
+    const newName = document.getElementById('profileName').value.trim();
+    const newPhone = document.getElementById('profilePhone').value.trim();
+
+    if (!newName) {
+        alert("Vui lòng nhập tên hiển thị!");
+        return;
+    }
+
+    try {
+        // Cập nhật vào đúng node của nhân viên đang đăng nhập
+        await userRef.update({
+            name: newName,
+            phone: newPhone
+        });
+
+        alert("Cập nhật hồ sơ thành công!");
+        closeProfileModal();
+        // Giao diện sẽ tự cập nhật nhờ hàm lắng nghe .on('value') bên dưới
+    } catch (error) {
+        console.error(error);
+        alert("Lỗi khi lưu dữ liệu!");
+    }
+}
+
+// 4. Hàm lắng nghe thay đổi để hiển thị lên Header (QUAN TRỌNG)
+function listenToUserProfile() {
+    if (userRef) {
+        userRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const badge = document.getElementById('userProfileBadge');
+            const nameDisplay = document.getElementById('displayUserName');
+
+            if (data && data.name) {
+                nameDisplay.innerText = data.name;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                // Nếu chưa có tên thì hiện Mã NV tạm thời
+                nameDisplay.innerText = employeeId;
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            }
+        });
     }
 }
