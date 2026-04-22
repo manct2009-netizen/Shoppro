@@ -43,7 +43,8 @@ async function handleLogin() {
             localStorage.setItem('v11_employee_id', employeeId);
             
             // 4. Thiết lập đường dẫn dữ liệu cá nhân cho user này
-            userRef = db.ref('users/' + employeeId);
+            userRef = db.ref('SunsetShopData/Employees/' + employeeId);
+
             
             // 5. Chạy hàm hiển thị tên lên Header (Hàm này bạn đã viết ở Bước 2)
             listenToUserProfile(); 
@@ -197,36 +198,41 @@ async function submitRegister() {
         }
 
         // KHỞI TẠO DỮ LIỆU KHI ĐÃ CÓ MÃ NHÂN VIÊN
-        function initDataSync() {
-            userRef = db.ref('SunsetShopData/Employees/' + employeeId);
-            userRef.on('value', (snapshot) => {
-                const data = snapshot.val() || {};
-                orders = data.v11_orders || [];
-                
-                let rawCust = data.v11_customers || {};
-                customers = {};
-                for (let key in rawCust) {
-                    if (rawCust[key] !== null && rawCust[key] !== undefined) {
-                        customers[key] = rawCust[key];
-                    }
-                }
+function initDataSync() {
+    userRef = db.ref('SunsetShopData/Employees/' + employeeId);
+    
+    // Gọi hàm này để hiển thị tên nhân viên ở góc phải khi tải trang
+    listenToUserProfile(); 
 
-                inventory = data.v11_inventory || [];
-                cvAccumulations = data.v11_cv_accumulations || [];
-                cvMonthlyStats = data.v11_cv_monthly || {};
-
-                renderTable();
-                renderCustomerCRM();
-                renderInventory();
-                updateProductDatalist();
-                updateDatalists();
-                
-                if(!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
-                if(!document.getElementById('view-cv').classList.contains('hidden')) renderAllCV();
-
-                checkAndShowEvents();
-            });
+    userRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        orders = data.v11_orders || [];
+        
+        let rawCust = data.v11_customers || {};
+        customers = {};
+        for (let key in rawCust) {
+            if (rawCust[key] !== null && rawCust[key] !== undefined) {
+                customers[key] = rawCust[key];
+            }
         }
+
+        inventory = data.v11_inventory || [];
+        cvAccumulations = data.v11_cv_accumulations || [];
+        cvMonthlyStats = data.v11_cv_monthly || {};
+
+        renderTable();
+        renderCustomerCRM();
+        renderInventory();
+        updateProductDatalist();
+        updateDatalists();
+        
+        if(!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
+        if(!document.getElementById('view-cv').classList.contains('hidden')) renderAllCV();
+
+        checkAndShowEvents();
+    });
+}
+
 
         // KIỂM TRA ĐĂNG NHẬP KHI TẢI TRANG
         document.addEventListener('DOMContentLoaded', () => {
