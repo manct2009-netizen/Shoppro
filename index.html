@@ -248,21 +248,22 @@
                         <div class="space-y-4">
                             <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-address-card"></i> Khách hàng</label>
                             <div class="flex gap-2">
-                                <div class="input-group flex-1">
-                                    <i class="fa-solid fa-phone input-icon"></i>
-                                    <input type="text" id="custPhone" list="phoneDataList" onchange="autoFillByPhone()" class="form-input" placeholder="Số điện thoại...">
-                                </div>
-                                <select id="custType" class="bg-white border border-[#F9C4BA] rounded-xl px-3 text-xs font-bold text-[#034C5F]">
-                                    <option value="new">KH Mới</option>
-                                    <option value="ttd">KH TTD</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <i class="fa-solid fa-user input-icon"></i>
-                                <input type="text" id="custName" list="nameDataList" onchange="autoFillByName()" class="form-input" placeholder="Tên khách hàng">
-                            </div>
-                            <datalist id="phoneDataList"></datalist>
-                            <datalist id="nameDataList"></datalist>
+    <div class="input-group flex-1">
+        <i class="fa-solid fa-phone input-icon"></i>
+        <input type="text" id="custPhone" autocomplete="off" class="form-input" placeholder="Số điện thoại...">
+        <div id="phoneSuggestions" class="custom-suggestion-box"></div>
+    </div>
+    <select id="custType" class="bg-white border border-[#F9C4BA] rounded-xl px-3 text-xs font-bold text-[#034C5F]">
+        <option value="new">KH Mới</option>
+        <option value="ttd">KH TTD</option>
+    </select>
+</div>
+<div class="input-group mt-4">
+    <i class="fa-solid fa-user input-icon"></i>
+    <input type="text" id="custName" autocomplete="off" class="form-input" placeholder="Tên khách hàng">
+    <div id="nameSuggestions" class="custom-suggestion-box"></div>
+</div>
+
                         </div>
                         <div class="space-y-4">
                             <label class="text-xs font-bold text-[#034C5F] uppercase flex items-center gap-2"><i class="fa-solid fa-map-location-dot"></i> Địa chỉ</label>

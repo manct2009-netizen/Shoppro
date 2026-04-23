@@ -1,3 +1,66 @@
+/* ========================================================
+   CUSTOM SUGGESTION DROPDOWN (GỢI Ý TÌM KIẾM CỦA KÍNH LỎNG)
+   ======================================================== */
+.custom-suggestion-box {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    right: 0;
+    /* Hiệu ứng kính lỏng */
+    background: rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    
+    /* Viền phát sáng neon */
+    border: 1px solid rgba(56, 189, 248, 0.5) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), inset 0 0 10px rgba(56, 189, 248, 0.1) !important;
+    
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none; /* Ẩn mặc định */
+}
+
+.custom-suggestion-box.active {
+    display: block;
+    animation: fadeInDropdown 0.2s ease-out;
+}
+
+.suggestion-item {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #034C5F !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    border-bottom: 1px dashed rgba(56, 189, 248, 0.2);
+    transition: all 0.2s ease;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    text-shadow: 0 0 5px rgba(56, 189, 248, 0.5);
+    padding-left: 18px; /* Hiệu ứng thụt lề khi hover */
+}
+
+/* Custom thanh cuộn cho hộp gợi ý */
+.custom-suggestion-box::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-suggestion-box::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.4);
+    border-radius: 10px;
+}
+
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* Ép tất cả các thành phần trên web dùng font độc lập, bỏ qua font hệ thống */
 html, body, div, p, span, h1, h2, h3, h4, h5, h6, input, button, table, td, th {
     font-family: 'Be Vietnam Pro', sans-serif !important;
