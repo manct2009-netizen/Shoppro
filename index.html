@@ -158,14 +158,14 @@
             </div>
             
             <div class="flex flex-col justify-center">
-                <h1 class="font-extrabold text-[#ffffff] tracking-tight text-xl uppercase hidden md:block">BND<span class="text-[#EE6457] font-light">Shop</span></h1>
+                <h1 class="font-extrabold text-[#ffffff] tracking-tight text-xl  uppercase hidden md:block">BND<span class="text-[#EE6457] font-light">Shop</span></h1>
                 
-                    <div id="userProfileBadge" class="hidden items-center text-white text-xs font-bold px-2 py-0.5 w-fit mt-0.5">
-        <i class="fa-solid fa-user-tie mr-1.5 text-white"></i>
-        <span id="displayUserName" class="truncate max-w-[100px]">Đang tải...</span>
-    </div>
- </div>
-        </div>
+                 <div id="userProfileBadge" class="hidden md:inline-flex items-center text-white text-xs font-bold px-1 py-0.2 w-fit mt-0.2">
+    <i class="fa-solid fa-user-tie mr-1 text-white"></i>
+    <span id="displayUserName" class="truncate max-w-[100px]">...</span>
+</div>
+</div>
+          </div>
 
         <nav class="flex bg-[#FDF5F4] p-1 rounded-2xl border border-[#F9C4BA] overflow-x-auto whitespace-nowrap hide-scrollbar max-w-[60vw] md:max-w-none">
             <button onclick="switchTab('orders')" id="tab-orders" class="px-3 md:px-4 py-2 rounded-xl text-sm font-bold transition-all bg-white text-[#034C5F] shadow-sm">
@@ -334,10 +334,10 @@
                         <button onclick="resetOrderFilters()" class="text-[10px] font-bold text-[#EE6457] ml-auto">XÓA LỌC</button>
                     </div>
                 </div>
-                <div class="overflow-x-auto">
+                                <div class="overflow-x-auto overflow-y-auto" style="max-height: 900px;">
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase">
-    <tr>
+                        <thead class="bg-[#FDF5F4] text-[10px] font-bold text-[#034C5F] uppercase sticky top-0 z-10 shadow-sm">
+<tr>
         <th class="p-4">Khách hàng</th>
         <th class="p-4">Sản phẩm</th>
         <th class="p-4 text-center">Ngày gửi</th>
@@ -671,7 +671,7 @@
                             </div>
                             <div class="col-span-2">
                                 <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Số tiền</label>
-                                <input type="text" inputmode="numeric" id="cvAccAmount" class="form-input  mt-1 w-full h-1 text-[#EE6457] font-black text-lg" placeholder="VD: 1,500,000" oninput="formatCurrencyInput(this)">
+                                <input type="text" inputmode="numeric" id="cvAccAmount" class="form-input  mt-1 w-full h-11 text-[#EE6457] font-black text-lg" placeholder="VD: 1,500,000" oninput="formatCurrencyInput(this)">
                             </div>
                             <div class="col-span-2 md:col-span-3">
                                 <label class="text-[10px] font-bold text-[#97BEC6] uppercase mb-1 block">Ghi chú</label>

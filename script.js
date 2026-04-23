@@ -1200,6 +1200,23 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
     if (cvMonthPickEl) cvMonthPickEl.value = currentMonthStr;
 
+    // --- CODE MỚI THÊM: SET MẶC ĐỊNH BỘ LỌC ĐƠN HÀNG ---
+    const listFilterStart = document.getElementById('listFilterStart');
+    const listFilterEnd = document.getElementById('listFilterEnd');
+
+    if (listFilterStart && listFilterEnd) {
+        const todayLocal = new Date();
+        const firstDayLocal = new Date(todayLocal.getFullYear(), todayLocal.getMonth(), 1);
+        
+        // Bù trừ múi giờ để toISOString() không bị lùi ngày
+        firstDayLocal.setMinutes(firstDayLocal.getMinutes() - firstDayLocal.getTimezoneOffset());
+        todayLocal.setMinutes(todayLocal.getMinutes() - todayLocal.getTimezoneOffset());
+        
+        listFilterStart.value = firstDayLocal.toISOString().split('T')[0];
+        listFilterEnd.value = todayLocal.toISOString().split('T')[0];
+    }
+    // ----------------------------------------------------
+
     if (typeof autoSetDeliveryDate === 'function') autoSetDeliveryDate(); 
     
     setupCustomAutocomplete();
@@ -1209,6 +1226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addProductRow();
     }
 });
+
 
 function toggleSettingsMenu() {
     const menu = document.getElementById('settingsMenu');
