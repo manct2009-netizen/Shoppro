@@ -151,7 +151,10 @@ function initDataSync() {
 
     userRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
-        orders = data.v11_orders || [];
+        let rawOrders = data.v11_orders || {};
+// Chuyển Object thành Array và sắp xếp từ mới đến cũ (giống với unshift lúc trước)
+        orders = Object.values(rawOrders).sort((a, b) => b.timestamp - a.timestamp);
+
         
         let rawCust = data.v11_customers || {};
         customers = {};
@@ -337,6 +340,7 @@ function calculateTotal() {
     const qtyInputs = document.querySelectorAll('.p-qty');
 
     nameInputs.forEach((el, idx) => {
+        // Dùng parseCurrency cho đơn giá sản phẩm
         const price = parseCurrency(priceInputs[idx].value) || 0;
         const qty = parseFloat(qtyInputs[idx].value) || 0;
         
@@ -345,34 +349,52 @@ function calculateTotal() {
         }
     });
 
-    const ship = parseFloat(document.getElementById('shipFee').value) || 0;
-    const dVal = parseFloat(document.getElementById('discountVal').value) || 0;
+    // QUAN TRỌNG: Dùng parseCurrency để đọc giá trị có dấu phẩy từ ô Ship và Giảm giá
+    const ship = parseCurrency(document.getElementById('shipFee').value) || 0;
+    const dVal = parseCurrency(document.getElementById('discountVal').value) || 0;
     const dType = document.getElementById('discountType').value;
     
     let disc = dType === 'percent' ? subtotal * (dVal/100) : dVal;
     let total = Math.max(0, subtotal - disc + ship);
     
+    // Hiển thị kết quả (giả sử bạn dùng hàm formatMoney có sẵn của bạn)
     document.getElementById('finalTotal').innerText = formatMoney(total);
     
     return { subtotal, total };
 }
-
 function saveOrder() {
     const phone = document.getElementById('custPhone').value.trim();
     const name = document.getElementById('custName').value.trim();
     const addr = document.getElementById('custAddr').value;
     const type = document.getElementById('custType').value;
     const isEdit = document.getElementById('editOrderId').value !== "";
+    
     if(!phone || !name) return alert("Thiếu Tên hoặc SĐT!");
+    
     let products = [];
     let valid = true;
-    document.querySelectorAll('.p-name').forEach((el, idx) => {
-        const pPrice = document.querySelectorAll('.p-price')[idx].value;
-        const pQty = parseInt(document.querySelectorAll('.p-qty')[idx].value) || 1;
-        if(!el.value || !pPrice) valid = false;
-        products.push({ name: el.value, price: parseCurrency(pPrice) || 0, qty: pQty });
+
+    // QUAN TRỌNG: Sửa cách lấy dữ liệu sản phẩm an toàn hơn (Tránh lỗi dùng [idx])
+    // Thay vì quét riêng lẻ, ta quét từng "dòng sản phẩm" (product-row)
+    document.querySelectorAll('.product-row').forEach((row) => {
+        const nameInput = row.querySelector('.p-name').value;
+        const priceInput = row.querySelector('.p-price').value;
+        const qtyInput = parseInt(row.querySelector('.p-qty').value) || 1;
+        
+        if(!nameInput || !priceInput) {
+            valid = false;
+        } else {
+            products.push({ 
+                name: nameInput, 
+                price: parseCurrency(priceInput) || 0, 
+                qty: qtyInput 
+            });
+        }
     });
+
     if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
+    
+    // Cập nhật tồn kho (Local)
     if (!isEdit) {
         products.forEach(p => {
             const invItem = inventory.find(i => i.name.toLowerCase() === p.name.toLowerCase());
@@ -381,6 +403,7 @@ function saveOrder() {
         });
     }
     
+    // Cập nhật thông tin khách hàng (Local)
     if(!customers[phone]) {
         customers[phone] = { name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai', timestamp: Date.now() };
     } else { 
@@ -416,16 +439,29 @@ function saveOrder() {
         isPaid: existingOrder ? (existingOrder.isPaid || false) : false 
     };
 
-    if(isEdit) {
-        const index = orders.findIndex(o => o.id == id);
-        if(index !== -1) orders[index] = order;
+    // QUAN TRỌNG: Cập nhật ngay mảng orders ở Client để UI không bị delay
+    if (isEdit) {
+        const index = orders.findIndex(x => x.id === id);
+        if (index !== -1) orders[index] = order;
     } else {
-        orders.unshift(order);
+        orders.unshift(order); // Đẩy đơn mới lên đầu danh sách
     }
 
-    userRef.update({ 'v11_orders': orders, 'v11_customers': customers, 'v11_inventory': inventory });
-    resetForm(); 
-    showToast("Đã lưu đồng bộ thành công!");
+    // Đẩy dữ liệu lên Firebase
+    let updates = {};
+    updates[`v11_orders/${id}`] = order;
+    updates[`v11_customers/${phone}`] = customers[phone];
+    updates[`v11_inventory`] = inventory;
+
+    userRef.update(updates)
+        .then(() => {
+            resetForm(); 
+            renderTable(); // Cập nhật lại bảng đơn hàng ngay lập tức
+            showToast("Đã lưu đồng bộ thành công!");
+        })
+        .catch((error) => {
+            alert("Có lỗi khi lưu đơn hàng: " + error.message);
+        });
 }
 
 function addManualCustomer() {
@@ -459,8 +495,9 @@ function renderTable() {
         if (o.payMethod === "Chuyển khoản") shortPayMethod = "CK";
         else if (o.payMethod === "Tiền mặt") shortPayMethod = "TM";
 
-        let paidBg = o.isPaid ? "bg-green-500 border-green-600" : "bg-slate-100 border-slate-200";
-        let paidIconColor = o.isPaid ? "text-white" : "text-slate-300";
+        let paidStyle = o.isPaid 
+    ? "background-color: #10b981; border-color: #059669; color: #ffffff;" // Màu xanh (Đã thu)
+    : "background-color: #f1f5f9; border-color: #e2e8f0; color: #94a3b8;";
 
         let shipDateStyle = o.status === 'Đợi gửi' 
             ? "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30" 
@@ -482,15 +519,16 @@ function renderTable() {
             </td>
             <td class="p-4 text-xs text-slate-500 line-clamp-1">${o.products.map(p => `${p.name} (x${p.qty})`).join(', ')}</td>
             <td class="p-4 text-center">
-                <span class="${shipDateStyle} font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all">
+                    <span id="ship-badge-${o.id}" class="${shipDateStyle} font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all">
                     <i class="fa-solid fa-truck-fast mr-1"></i>${formattedShipDate}
                 </span>
             </td>
+
             <td class="p-4 text-center font-black text-[#034C5F] text-xs">
                 ${shortPayMethod}
             </td>
-     <td class="p-4 text-center">
-        <select onchange="changeOrderStatus(${o.id}, this.value)" 
+        <td class="p-4 text-center">
+        <select onchange="changeOrderStatus('${o.id}', this.value)" 
             class="text-[11px] font-bold rounded-full px-3 py-1 cursor-pointer transition-all appearance-none border-none outline-none focus:ring-0"
             style="
                 background-color: ${getStatusStyles(o.status).bg} !important; 
@@ -499,7 +537,7 @@ function renderTable() {
                 width: auto;
                 min-width: 100px;
             ">
-            <option value="Đợi gửi" ${o.status === 'Đợi gửi' ? 'selected' : ''} style="background: white; color: #ffffff;">Đợi gửi</option>
+            <option value="Đợi gửi" ${o.status === 'Đợi gửi' ? 'selected' : ''} style="background: white; color: #000000;">Đợi gửi</option>
             <option value="Đang giao" ${o.status === 'Đang giao' ? 'selected' : ''} style="background: white; color: #1e40af;">Đang giao 🚚</option>
             <option value="Thành công" ${o.status === 'Thành công' ? 'selected' : ''} style="background: white; color: #065f46;">Thành công ✅</option>
             <option value="Chăm sóc" ${o.status === 'Chăm sóc' ? 'selected' : ''} style="background: white; color: #5b21b6;">Chăm sóc 💬</option>
@@ -509,21 +547,124 @@ function renderTable() {
             <option value="Đã Hủy" ${o.status === 'Đã Hủy' ? 'selected' : ''} style="background: white; color: #374151;">Đã Hủy ❌</option>
         </select>
     </td>
+
             <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
-            <td class="p-4 text-center">
-                <button onclick="togglePaidStatus(${o.id})" class="w-7 h-7 rounded-lg border flex items-center justify-center transition-all ${paidBg} ${paidIconColor} hover:scale-110 shadow-sm mx-auto" title="Đánh dấu đã thu tiền">
+           <td class="p-4 text-center">
+                <button onclick="togglePaidStatus('${o.id}')" 
+                    class="w-7 h-7 rounded-lg border flex items-center justify-center transition-all hover:scale-110 shadow-sm mx-auto" 
+                    style="${paidStyle}" title="Đánh dấu đã thu tiền">
                     <i class="fa-solid fa-check text-sm"></i>
                 </button>
             </td>
             <td class="p-4 text-center">
                 <div class="flex justify-center gap-3">
-                    <button onclick="openInvoice(${o.id})" class="text-[#97BEC6] hover:text-[#034C5F]"><i class="fa-solid fa-receipt text-lg"></i></button>
-                    <button onclick="editOrder(${o.id})" class="text-[#97BEC6] hover:text-[#034C5F]"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
-                    <button onclick="deleteOrder(${o.id})" class="text-slate-200 hover:text-red-400"><i class="fa-solid fa-trash text-lg"></i></button>
+                    <button onclick="openInvoice('${o.id}')" class="text-[#97BEC6] hover:text-[#034C5F]"><i class="fa-solid fa-receipt text-lg"></i></button>
+                    <button onclick="editOrder('${o.id}')" class="text-[#97BEC6] hover:text-[#034C5F]"><i class="fa-solid fa-pen-to-square text-lg"></i></button>
+                    <button onclick="deleteOrder('${o.id}')" class="text-slate-200 hover:text-red-400"><i class="fa-solid fa-trash text-lg"></i></button>
                 </div>
             </td>
         </tr>`;
     }).join('');
+}
+// ==========================================
+// CÁC HÀM XỬ LÝ ĐƠN HÀNG TRONG BẢNG
+// ==========================================
+
+function changeOrderStatus(id, newStatus) {
+    // 1. Tìm đơn hàng trong mảng dữ liệu local
+    const index = orders.findIndex(o => o.id == id);
+    
+    if (index !== -1) {
+        // 2. Cập nhật dữ liệu vào mảng orders (Quan trọng để bảng không bị nhảy về giá trị cũ)
+        orders[index].status = newStatus;
+
+        // 3. Gửi lệnh cập nhật lên Firebase
+        userRef.child(`v11_orders/${id}`).update({ status: newStatus })
+          
+
+        // 4. CẬP NHẬT GIAO DIỆN TỨC THÌ (Đổi cả CHỮ và MÀU)
+        // Tìm đúng thẻ select của đơn hàng này dựa trên ID
+        const selectEl = document.querySelector(`select[onchange*="${id}"]`);
+        
+        if (selectEl) {
+            // Đổi chữ hiển thị bằng cách gán lại giá trị được chọn
+            selectEl.value = newStatus; 
+
+            // Đổi màu sắc theo trạng thái mới
+            const styles = getStatusStyles(newStatus);
+            selectEl.style.setProperty('background-color', styles.bg, 'important');
+            selectEl.style.setProperty('color', styles.text, 'important');
+        }
+                if (selectEl) {
+            // Đổi chữ hiển thị bằng cách gán lại giá trị được chọn
+            selectEl.value = newStatus; 
+
+            // Đổi màu sắc theo trạng thái mới
+            const styles = getStatusStyles(newStatus);
+            selectEl.style.setProperty('background-color', styles.bg, 'important');
+            selectEl.style.setProperty('color', styles.text, 'important');
+        }
+
+        // --- THÊM ĐOẠN NÀY ĐỂ ĐỔI MÀU CỘT NGÀY GỬI TỨC THÌ ---
+        const shipBadge = document.getElementById(`ship-badge-${id}`);
+        if (shipBadge) {
+            if (newStatus === 'Đợi gửi') {
+                // Đổi thành màu cam đỏ nổi bật
+                shipBadge.className = "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
+            } else {
+                // Đổi thành xám mờ
+                shipBadge.className = "bg-slate-100 text-slate-400 border border-slate-200 opacity-60 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
+            }
+        }
+     
+        // 5. Cập nhật lại biểu đồ/thống kê nếu cần (không ảnh hưởng đến bảng)
+        if (typeof renderAnalytics === "function") {
+            renderAnalytics();
+        }
+    }
+}
+
+
+function togglePaidStatus(id) {
+    const orderIndex = orders.findIndex(x => x.id == id);
+    if (orderIndex !== -1) {
+        const newStatus = !orders[orderIndex].isPaid;
+        
+        // 1. Cập nhật Local State trước để UI phản hồi tức thì
+        orders[orderIndex].isPaid = newStatus;
+        renderTable(); // Đổi màu nút ngay lập tức
+        
+        // Cập nhật lại số liệu nếu đang mở tab báo cáo
+        if(!document.getElementById('view-analytics').classList.contains('hidden')) {
+            renderAnalytics(); 
+        }
+
+        // 2. Đẩy dữ liệu lên Firebase
+        userRef.child(`v11_orders/${id}`).update({ isPaid: newStatus })
+            .then(() => {
+                if(newStatus);
+                else;
+            })
+            .catch(err => {
+                // Trả lại trạng thái cũ nếu lỗi mạng
+                orders[orderIndex].isPaid = !newStatus;
+                renderTable();
+                alert("Lỗi: " + err.message);
+            });
+    }
+}
+
+function deleteOrder(id) { 
+    if(confirm("Xoá đơn này?")) { 
+        userRef.child(`v11_orders/${id}`).remove()
+            .then(() => {
+                // Xóa ở Local và render lại UI cho mượt
+                orders = orders.filter(x => x.id != id);
+                renderTable();
+                showToast("Đã xóa đơn hàng!");
+            })
+            .catch(error => alert("Lỗi khi xóa: " + error.message));
+    } 
 }
 
 function getStatusStyles(status) {
@@ -629,28 +770,8 @@ function saveCRM() { userRef.child('v11_customers').set(customers); }
 function autoFillByPhone() { const p = document.getElementById('custPhone').value; if(customers[p]) { document.getElementById('custName').value = customers[p].name; document.getElementById('custAddr').value = customers[p].address; } }
 function autoFillByName() { const n = document.getElementById('custName').value; const p = Object.keys(customers).find(k => customers[k].name === n); if(p) { document.getElementById('custPhone').value = p; document.getElementById('custAddr').value = customers[p].address; } }
 
-function changeOrderStatus(id, newStatus) {
-    const o = orders.find(x => x.id === id);
-    if (o) {
-        o.status = newStatus;
-        userRef.child('v11_orders').set(orders);
-    }
-}
 
-function deleteOrder(id) { if(confirm("Xoá đơn này?")) { orders = orders.filter(o => o.id !== id); userRef.child('v11_orders').set(orders); } }
 
-function togglePaidStatus(id) {
-    const orderIndex = orders.findIndex(x => x.id === id);
-    if (orderIndex !== -1) {
-        orders[orderIndex].isPaid = !orders[orderIndex].isPaid;
-        userRef.child('v11_orders').set(orders);
-        if(orders[orderIndex].isPaid) {
-            showToast("✅ Đã đánh dấu: ĐÃ THU TIỀN!");
-        } else {
-            showToast("❌ Đã hủy đánh dấu thu tiền!");
-        }
-    }
-}
 
 function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
 
@@ -669,8 +790,14 @@ function renderCustomerCRM() {
     const tbody = document.getElementById('customerTableBody');
     if(!tbody) return;
     
+    // Tính toán chi tiêu an toàn, tránh trường hợp o.customer bị undefined
     const spendings = {}; 
-    orders.forEach(o => spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total);
+    orders.forEach(o => {
+        if(o && o.customer && o.customer.phone) {
+            spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total;
+        }
+    });
+
     const CUSTOMER_STATUS_STYLES = { "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" };
     const sortMode = document.getElementById('customerSortOrder').value; 
     
@@ -685,11 +812,18 @@ function renderCustomerCRM() {
         });
     }
 
+    // So sánh an toàn (Safe Sort) để tránh lỗi Undefined
     keys.sort((a, b) => {
-        if (sortMode === 'newest') return (customers[b].timestamp || 0) - (customers[a].timestamp || 0);
-        else if (sortMode === 'oldest') return (customers[a].timestamp || 0) - (customers[b].timestamp || 0);
-        else if (sortMode === 'name') return customers[a].name.localeCompare(customers[b].name);
-        else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); return 0;
+        const cA = customers[a] || {};
+        const cB = customers[b] || {};
+        const nameA = cA.name || "";
+        const nameB = cB.name || "";
+
+        if (sortMode === 'newest') return (cB.timestamp || 0) - (cA.timestamp || 0);
+        else if (sortMode === 'oldest') return (cA.timestamp || 0) - (cB.timestamp || 0);
+        else if (sortMode === 'name') return nameA.localeCompare(nameB);
+        else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); 
+        return 0;
     });
     
     const today = new Date();
@@ -699,7 +833,8 @@ function renderCustomerCRM() {
 
     tbody.innerHTML = keys.map((phone, index) => {
         const c = customers[phone]; if(!c) return ""; 
-        const currentStatus = c.status || 'Vãn lai'; const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
+        const currentStatus = c.status || 'Vãn lai'; 
+        const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
         
         let bdayMMDD = c.birthday ? c.birthday.substring(5) : "";
         let isBdayToday = (bdayMMDD === todayMMDD);
@@ -709,38 +844,106 @@ function renderCustomerCRM() {
         let isAnniToday = (anniMMDD === todayMMDD);
         let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
         
+        // Escape nháy đơn an toàn khi gắn vào HTML
+        const safePhone = phone.replace(/'/g, "\\'");
+        
         return `<tr>
             <td class="p-3 text-center font-bold text-slate-400">${index + 1}</td>
-            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'name', this.value)" class="crm-textarea font-bold text-[#034C5F]">${c.name}</textarea></td>
+            <td class="p-3"><textarea rows="1" onchange="updateCustomerField('${safePhone}', 'name', this.value)" class="crm-textarea font-bold text-[#034C5F]">${c.name || ''}</textarea></td>
             <td class="p-3">${phone}</td>
-            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'address', this.value)" class="crm-textarea">${c.address||''}</textarea></td>
-            <td class="p-3"><input type="text" value="${c.birthday||''}" onchange="updateCustomerField('${phone}', 'birthday', this.value)" class="crm-input cursor-pointer flatpickr-date ${bdayClass}" placeholder="DD/MM/YYYY"></td>
-            <td class="p-3"><input type="text" value="${c.anniversary||''}" onchange="updateCustomerField('${phone}', 'anniversary', this.value)" class="crm-input cursor-pointer flatpickr-date text-[#EE6457] ${anniClass}" placeholder="DD/MM/YYYY"></td>
-            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'job', this.value)" class="crm-textarea">${c.job||''}</textarea></td>
-            <td class="p-3"><select onchange="updateCustomerField('${phone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td>
-            <td class="p-3"><textarea rows="1" oninput="this.style.height=''; this.style.height = this.scrollHeight + 'px'" onchange="updateCustomerField('${phone}', 'note', this.value)" class="crm-textarea italic text-slate-600">${c.note||''}</textarea></td>
+            <td class="p-3"><textarea rows="1" onchange="updateCustomerField('${safePhone}', 'address', this.value)" class="crm-textarea">${c.address||''}</textarea></td>
+            <td class="p-3"><input type="text" value="${c.birthday||''}" onchange="updateCustomerField('${safePhone}', 'birthday', this.value)" class="crm-input cursor-pointer flatpickr-date ${bdayClass}" placeholder="DD/MM/YYYY"></td>
+            <td class="p-3"><input type="text" value="${c.anniversary||''}" onchange="updateCustomerField('${safePhone}', 'anniversary', this.value)" class="crm-input cursor-pointer flatpickr-date text-[#EE6457] ${anniClass}" placeholder="DD/MM/YYYY"></td>
+            <td class="p-3"><textarea rows="1" onchange="updateCustomerField('${safePhone}', 'job', this.value)" class="crm-textarea">${c.job||''}</textarea></td>
+            <td class="p-3"><select onchange="updateCustomerField('${safePhone}', 'status', this.value); renderCustomerCRM();" class="crm-input rounded-md px-2 py-1 transition-all" style="${statusStyle}"><option value="Vip" ${currentStatus === 'Vip' ? 'selected' : ''}>Vip 🍀</option><option value="Vãn lai" ${currentStatus === 'Vãn lai' ? 'selected' : ''}>Vãn lai 🍃</option><option value="Thân Thiết" ${currentStatus === 'Thân Thiết' ? 'selected' : ''}>Thân thiết 🌺</option><option value="Đơn 1" ${currentStatus === 'Đơn 1' ? 'selected' : ''}> Đơn 1 💙</option><option value="Đơn 2" ${currentStatus === 'Đơn 2' ? 'selected' : ''}> Đơn 2 💜</option><option value="Đơn 3" ${currentStatus === 'Đơn 3' ? 'selected' : ''}> Đơn 3 🩷</option><option value="Bom" ${currentStatus === 'Bom' ? 'selected' : ''}>Bom 💣</option><option value="Ngừng kết nối" ${currentStatus === 'Ngừng kết nối' ? 'selected' : ''}>Ngừng kết nối ❌</option><option value="Chăm sóc" ${currentStatus === 'Chăm sóc' ? 'selected' : ''}>Chăm sóc</option></select></td>
+            <td class="p-3"><textarea rows="1" onchange="updateCustomerField('${safePhone}', 'note', this.value)" class="crm-textarea italic text-slate-600">${c.note||''}</textarea></td>
             <td class="p-3 text-right font-black text-[#034C5F]">${formatMoney(spendings[phone]||0)}</td>
-            <td class="p-3 text-center"><button onclick="deleteCustomer('${phone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
+            <td class="p-3 text-center"><button onclick="deleteCustomer('${safePhone}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash"></i></button></td>
         </tr>`;
     }).join('');
-
+ 
     if (typeof flatpickr !== "undefined") {
-        if (window.datePickerInstances && window.datePickerInstances.length > 0) {
-            window.datePickerInstances.forEach(instance => instance.destroy());
-        }
-        window.datePickerInstances = flatpickr(".flatpickr-date", {
-            dateFormat: "Y-m-d",
-            altInput: true,
+        requestAnimationFrame(() => {
+            if (window.datePickerInstances) {
+                window.datePickerInstances.forEach(instance => {
+                    if(instance && typeof instance.destroy === 'function') instance.destroy();
+                });
+            }
+            window.datePickerInstances = flatpickr(".flatpickr-date", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                disableMobile: true 
+            });
         });
     }
 }
 
+
 function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
 function deleteCustomer(p) { if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) { delete customers[p]; saveCRM(); } }
 function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('orderDate').valueAsDate = new Date(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
+function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
+
+function downloadImage() {
+    const invoice = document.getElementById('invoiceContent');
+    const modal = document.getElementById('invoiceModal');
+    
+    // Lấy nút đang bấm để đổi hiệu ứng Loading
+    const btn = document.querySelector('button[onclick="downloadImage()"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>ĐANG XỬ LÝ...';
+    btn.disabled = true;
+
+    // Lưu lại trạng thái CSS cũ
+    const originalOverflow = invoice.style.overflow;
+    const originalPadding = invoice.style.paddingBottom;
+    const originalShadow = invoice.style.boxShadow;
+
+    // Tối ưu phần tử trước khi chụp ảnh
+    invoice.style.overflow = 'visible';
+    invoice.style.paddingBottom = "30px";
+    invoice.style.boxShadow = 'none'; // Tắt bóng đổ để tránh lỗi viền đen của html2canvas
+
+    // Reset scroll để tránh lỗi offset
+    modal.scrollTop = 0;
+    window.scrollTo(0, 0);
+
+    setTimeout(() => {
+        html2canvas(invoice, {
+            scale: 2, // Scale = 2 là tối ưu nhất cho thiết bị di động (đảm bảo nét, không bị crash RAM)
+            useCORS: true,
+            logging: false,
+            backgroundColor: "#ffffff",
+            scrollY: -window.scrollY, // Fix lỗi lệch khung hình khi đang cuộn
+            windowWidth: invoice.scrollWidth,
+            windowHeight: invoice.scrollHeight
+        }).then(canvas => {
+            const link = document.createElement('a');
+            const timeStr = new Date().getTime(); 
+            link.download = `HoaDon_BNDShop_${timeStr}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+
+            showToast("✅ Đã lưu ảnh hóa đơn thành công!");
+        }).catch(err => {
+            console.error("Lỗi xuất ảnh:", err);
+            showToast("❌ Có lỗi xảy ra khi lưu ảnh, vui lòng thử lại!");
+        }).finally(() => {
+            // Trả lại toàn bộ trạng thái UI như cũ
+            invoice.style.overflow = originalOverflow || '';
+            invoice.style.paddingBottom = originalPadding || '';
+            invoice.style.boxShadow = originalShadow || '';
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }, 300); // Tăng delay lên 300ms để DOM kịp render các thay đổi CSS trước khi chụp
+}
+
+
 
 function editOrder(id) { 
-    const o = orders.find(x => x.id === id); 
+    const o = orders.find(x => x.id == id); 
+    if(!o) return;
     document.getElementById('editOrderId').value = o.id; 
     document.getElementById('custPhone').value = o.customer.phone; 
     document.getElementById('custName').value = o.customer.name; 
@@ -761,50 +964,20 @@ function editOrder(id) {
     window.scrollTo({ top: 0, behavior: 'smooth' }); 
 }
 
-function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
 
-function downloadImage() {
-    const invoice = document.getElementById('invoiceContent');
-    const modal = document.getElementById('invoiceModal');
-    
-    const originalOverflow = invoice.style.overflow;
-    const originalPadding = invoice.style.paddingBottom;
 
-    invoice.style.overflow = 'visible';
-    invoice.style.paddingBottom = "30px";
 
-    modal.scrollTop = 0;
-
-    setTimeout(() => {
-        html2canvas(invoice, {
-            scale: 3, 
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff",
-            scrollY: 0, 
-            scrollX: 0,
-            allowTaint: true
-        }).then(canvas => {
-            const link = document.createElement('a');
-            const timeStr = new Date().getTime(); 
-            link.download = `HoaDon_${timeStr}.png`;
-            link.href = canvas.toDataURL('image/png', 1.0);
-            link.click();
-
-            invoice.style.overflow = originalOverflow || '';
-            invoice.style.paddingBottom = originalPadding || '';
-            showToast("Đã lưu ảnh hóa đơn thành công!");
-        }).catch(err => {
-            console.error("Lỗi xuất ảnh:", err);
-            invoice.style.overflow = originalOverflow || '';
-            invoice.style.paddingBottom = originalPadding || '';
-            showToast("Có lỗi xảy ra khi lưu ảnh!");
-        });
-    }, 200); 
-}
 
 function openInvoice(id) { 
-    const o = orders.find(x => x.id === id); 
+    const o = orders.find(x => x.id == id); // Đổi === thành ==
+    
+    // Thêm dòng kiểm tra an toàn này để tránh sập web nếu không tìm thấy đơn
+    if (!o) {
+        showToast("Không tìm thấy dữ liệu đơn hàng!");
+        return;
+    }
+    // ... giữ nguyên phần còn lại
+
     
     const noteHtml = o.note ? `
         <div style="padding:15px; background:#FDF5F4; border-radius:12px; font-size:12px; color:#034C5F; margin:15px 0; border:1px solid #F9C4BA; line-height: 1.5; text-align: left;">
@@ -1624,4 +1797,36 @@ function listenToUserProfile() {
             }
         });
     }
+}
+
+// Trình quản lý giãn dòng thông minh cho toàn bộ hệ thống
+document.addEventListener('input', function (e) {
+    // Chỉ xử lý nếu phần tử đó có class crm-textarea
+    if (e.target && e.target.classList.contains('crm-textarea')) {
+        const target = e.target;
+        // Sử dụng requestAnimationFrame để tối ưu hóa việc vẽ lại giao diện (60fps)
+        requestAnimationFrame(() => {
+            target.style.height = 'auto';
+            target.style.height = target.scrollHeight + 'px';
+        });
+    }
+});
+// --- FIX LỖI TÌM KIẾM: Thêm các hàm Debounce ---
+
+let searchOrderTimeout;
+function debouncedRenderOrder() {
+    clearTimeout(searchOrderTimeout);
+    // Đợi 300ms sau khi người dùng ngừng gõ mới render lại bảng đơn hàng
+    searchOrderTimeout = setTimeout(() => {
+        renderTable();
+    }, 300);
+}
+
+let searchCustomerTimeout;
+function debouncedRenderCustomerCRM() {
+    clearTimeout(searchCustomerTimeout);
+    // Đợi 300ms sau khi người dùng ngừng gõ mới render lại bảng khách hàng
+    searchCustomerTimeout = setTimeout(() => {
+        renderCustomerCRM();
+    }, 300);
 }
