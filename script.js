@@ -16,12 +16,116 @@ let userRef;
 
 const DEFAULT_PASSWORD = "898989";
 
+// ==========================================
+// HỆ THỐNG CUSTOM MODAL (THÔNG BÁO TÙY CHỈNH)
+// ==========================================
+
+function showCustomAlert(message, type = 'info') {
+    const modal = document.getElementById('customAlertModal');
+    const iconDiv = document.getElementById('customAlertIcon');
+    const titleEl = document.getElementById('customAlertTitle');
+    const messageEl = document.getElementById('customAlertMessage');
+
+    let iconHtml = '';
+    let titleClass = '';
+    let iconBgClass = '';
+    let titleText = 'Thông báo';
+
+    switch(type) {
+        case 'success':
+            iconHtml = '<i class="fa-solid fa-circle-check"></i>';
+            titleClass = 'text-emerald-600';
+            iconBgClass = 'bg-emerald-50 text-emerald-500 border-emerald-100';
+            titleText = 'Thành công';
+            break;
+        case 'error':
+            iconHtml = '<i class="fa-solid fa-circle-xmark"></i>';
+            titleClass = 'text-red-600';
+            iconBgClass = 'bg-red-50 text-red-500 border-red-100';
+            titleText = 'Lỗi hệ thống';
+            break;
+        case 'warning':
+            iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            titleClass = 'text-amber-600';
+            iconBgClass = 'bg-amber-50 text-amber-500 border-amber-100';
+            titleText = 'Cảnh báo';
+            break;
+        default:
+            iconHtml = '<i class="fa-solid fa-circle-info"></i>';
+            titleClass = 'text-[#034C5F]';
+            iconBgClass = 'bg-[#FDF5F4] text-[#034C5F] border-[#F9C4BA]';
+            titleText = 'Thông báo';
+    }
+
+    iconDiv.className = `w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-3xl mb-4 shadow-inner border ${iconBgClass}`;
+    iconDiv.innerHTML = iconHtml;
+    titleEl.className = `text-xl font-black mb-2 uppercase ${titleClass}`;
+    titleEl.innerText = titleText;
+    messageEl.innerText = message;
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+        modal.querySelector('div').classList.add('scale-100');
+    }, 10);
+}
+
+window.closeCustomAlert = function() {
+    const modal = document.getElementById('customAlertModal');
+    modal.classList.add('opacity-0');
+    modal.querySelector('div').classList.remove('scale-100');
+    modal.querySelector('div').classList.add('scale-95');
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+};
+
+function showCustomConfirm(message, onConfirmCallback) {
+    const modal = document.getElementById('customConfirmModal');
+    const messageEl = document.getElementById('customConfirmMessage');
+    const btnCancel = document.getElementById('customConfirmCancel');
+    const btnOk = document.getElementById('customConfirmOk');
+
+    messageEl.innerText = message;
+
+    // Reset sự kiện click cũ
+    const newBtnCancel = btnCancel.cloneNode(true);
+    const newBtnOk = btnOk.cloneNode(true);
+    btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
+    btnOk.parentNode.replaceChild(newBtnOk, btnOk);
+
+    const closeModal = () => {
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.remove('scale-100');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    };
+
+    newBtnCancel.addEventListener('click', closeModal);
+    newBtnOk.addEventListener('click', () => {
+        closeModal();
+        if(onConfirmCallback) onConfirmCallback();
+    });
+
+    modal.classList.remove('hidden');
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+        modal.querySelector('div').classList.add('scale-100');
+    }, 10);
+}
+
+// ==========================================
+
 async function handleLogin() {
     const code = document.getElementById('empCode').value.trim().toUpperCase();
     const pass = document.getElementById('empPassword').value;
 
     if (!code || !pass) {
-        alert("Vui lòng nhập đầy đủ mã và mật khẩu!");
+        showCustomAlert("Vui lòng nhập đầy đủ mã và mật khẩu!", "warning");
         return;
     }
 
@@ -34,21 +138,21 @@ async function handleLogin() {
             localStorage.setItem('v11_employee_id', employeeId);
             userRef = db.ref('SunsetShopData/Employees/' + employeeId);
             listenToUserProfile(); 
-            initDataSync(); // Đổi từ loadData() sang initDataSync() cho đúng tên hàm bên dưới
+            initDataSync(); 
             document.getElementById('loginModal').classList.add('hidden');
         } else {
-            alert("Mã nhân viên hoặc mật khẩu không chính xác!");
+            showCustomAlert("Mã nhân viên hoặc mật khẩu không chính xác!", "error");
         }
     } catch (error) {
         console.error("Lỗi đăng nhập:", error);
-        alert("Có lỗi kết nối: " + error.message);
+        showCustomAlert("Có lỗi kết nối: " + error.message, "error");
     }
 }
 
 function handleForgotPassword() {
     const code = document.getElementById('empCode').value.trim();
     if (!code) {
-        alert("Vui lòng điền Mã nhân viên ở ô phía trên trước để khôi phục mật khẩu!");
+        showCustomAlert("Vui lòng điền Mã nhân viên ở ô phía trên trước để khôi phục mật khẩu!", "warning");
         return;
     }
     document.getElementById('supplierCodeInput').value = '';
@@ -66,23 +170,23 @@ function submitForgotPassword() {
     const newPass = document.getElementById('newResetPassInput').value;
 
     if (supplierCode !== 'admin123') {
-        alert("Mã xác thực của nhà cung cấp không chính xác!");
+        showCustomAlert("Mã xác thực của nhà cung cấp không chính xác!", "error");
         return;
     }
 
     if (!newPass) {
-        alert("Vui lòng nhập mật khẩu mới mà bạn muốn đổi!");
+        showCustomAlert("Vui lòng nhập mật khẩu mới mà bạn muốn đổi!", "warning");
         return;
     }
 
     db.ref('SunsetShopData/Employees/' + code + '/password').set(newPass)
         .then(() => {
-            alert(`Thành công! Mật khẩu của nhân viên ${code} đã được đổi. Vui lòng đăng nhập lại.`);
+            showCustomAlert(`Thành công! Mật khẩu của nhân viên ${code} đã được đổi. Vui lòng đăng nhập lại.`, "success");
             closeForgotPassModal();
             document.getElementById('empPassword').value = ''; 
         })
         .catch((error) => {
-            alert("Lỗi khi cấp lại mật khẩu: " + error.message);
+            showCustomAlert("Lỗi khi cấp lại mật khẩu: " + error.message, "error");
         });
 }
 
@@ -105,12 +209,12 @@ async function submitRegister() {
     const newPass = document.getElementById('regEmpPassword').value;
 
     if (adminCode !== 'admin123') {
-        alert("Mã xác thực Admin không chính xác. Bạn không có quyền tạo tài khoản!");
+        showCustomAlert("Mã xác thực Admin không chính xác. Bạn không có quyền tạo tài khoản!", "error");
         return;
     }
 
     if (!newCode || !newPass) {
-        alert("Vui lòng điền đầy đủ Mã nhân viên và Mật khẩu!");
+        showCustomAlert("Vui lòng điền đầy đủ Mã nhân viên và Mật khẩu!", "warning");
         return;
     }
 
@@ -118,7 +222,7 @@ async function submitRegister() {
         const userNodeRef = db.ref('SunsetShopData/Employees/' + newCode);
         const snapshot = await userNodeRef.once('value');
         if (snapshot.exists()) {
-            alert("Mã nhân viên này đã tồn tại! Vui lòng chọn mã khác.");
+            showCustomAlert("Mã nhân viên này đã tồn tại! Vui lòng chọn mã khác.", "error");
             return;
         }
 
@@ -128,21 +232,21 @@ async function submitRegister() {
             status: "active"
         });
 
-        alert(`Tạo tài khoản thành công cho nhân viên: ${newCode}!\nBây giờ bạn có thể đăng nhập.`);
+        showCustomAlert(`Tạo tài khoản thành công cho nhân viên: ${newCode}!\nBây giờ bạn có thể đăng nhập.`, "success");
         closeRegisterModal();
         document.getElementById('empCode').value = newCode;
         document.getElementById('empPassword').value = '';
 
     } catch (error) {
-        alert("Có lỗi xảy ra khi tạo tài khoản: " + error.message);
+        showCustomAlert("Có lỗi xảy ra khi tạo tài khoản: " + error.message, "error");
     }
 }
 
 function handleLogout() {
-    if(confirm("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nhân viên hiện tại?\n(Bạn sẽ cần nhập mã mới để vào lại hệ thống)")) {
+    showCustomConfirm("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nhân viên hiện tại?\n(Bạn sẽ cần nhập mã mới để vào lại hệ thống)", () => {
         localStorage.removeItem('v11_employee_id');
         window.location.reload();
-    }
+    });
 }
 
 function initDataSync() {
@@ -152,10 +256,8 @@ function initDataSync() {
     userRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
         let rawOrders = data.v11_orders || {};
-// Chuyển Object thành Array và sắp xếp từ mới đến cũ (giống với unshift lúc trước)
         orders = Object.values(rawOrders).sort((a, b) => b.timestamp - a.timestamp);
 
-        
         let rawCust = data.v11_customers || {};
         customers = {};
         for (let key in rawCust) {
@@ -213,22 +315,29 @@ function restoreData(input) {
     if(!employeeId) return;
     const file = input.files[0];
     if (!file) return;
-    if(!confirm("CẢNH BÁO: Dữ liệu hiện tại sẽ bị ghi đè. Hãy chắc chắn bạn đã sao lưu trước đó!")) { input.value = ''; return; }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (data.orders && data.customers) {
-                userRef.child('v11_orders').set(data.orders);
-                userRef.child('v11_customers').set(data.customers);
-                if(data.inventory) userRef.child('v11_inventory').set(data.inventory);
-                if(data.cvAccumulations) userRef.child('v11_cv_accumulations').set(data.cvAccumulations);
-                if(data.cvMonthlyStats) userRef.child('v11_cv_monthly').set(data.cvMonthlyStats);
-                alert("Khôi phục thành công! Hệ thống đang tự động đồng bộ."); 
-            } else alert("File lỗi.");
-        } catch (err) { alert("Lỗi đọc file: " + err.message); }
-    };
-    reader.readAsText(file);
+
+    showCustomConfirm("CẢNH BÁO: Dữ liệu hiện tại sẽ bị ghi đè. Hãy chắc chắn bạn đã sao lưu trước đó!", () => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (data.orders && data.customers) {
+                    userRef.child('v11_orders').set(data.orders);
+                    userRef.child('v11_customers').set(data.customers);
+                    if(data.inventory) userRef.child('v11_inventory').set(data.inventory);
+                    if(data.cvAccumulations) userRef.child('v11_cv_accumulations').set(data.cvAccumulations);
+                    if(data.cvMonthlyStats) userRef.child('v11_cv_monthly').set(data.cvMonthlyStats);
+                    showCustomAlert("Khôi phục thành công! Hệ thống đang tự động đồng bộ.", "success"); 
+                } else {
+                    showCustomAlert("File không hợp lệ hoặc cấu trúc lỗi.", "error");
+                }
+            } catch (err) { 
+                showCustomAlert("Lỗi đọc file: " + err.message, "error"); 
+            }
+        };
+        reader.readAsText(file);
+    });
+    input.value = ''; 
 }
 
 function saveInventory() { userRef.child('v11_inventory').set(inventory); }
@@ -238,7 +347,7 @@ function addInventoryProduct() {
     const qty = parseInt(document.getElementById('invQty').value) || 0;
     if(!name) return showToast("Nhập tên sản phẩm!");
     const existing = inventory.find(p => p.name.toLowerCase() === name.toLowerCase());
-    if(existing) return alert("Sản phẩm đã tồn tại trong kho!");
+    if(existing) return showCustomAlert("Sản phẩm đã tồn tại trong kho!", "warning");
     inventory.push({ name, price: price || 0, qty: qty });
     document.getElementById('invName').value = '';
     document.getElementById('invPrice').value = '';
@@ -254,7 +363,13 @@ function updateInventoryProduct(index, field, value) {
     saveInventory();
 }
 
-function deleteInventoryProduct(index) { if(confirm("Xóa sản phẩm này khỏi kho?")) { inventory.splice(index, 1); saveInventory(); } }
+function deleteInventoryProduct(index) { 
+    showCustomConfirm("Xóa sản phẩm này khỏi kho?", () => {
+        inventory.splice(index, 1); 
+        saveInventory();
+        showToast("Đã xóa khỏi kho!");
+    }); 
+}
 
 function renderInventory() {
     const tbody = document.getElementById('inventoryTableBody');
@@ -287,7 +402,6 @@ function updateQty(btn, change) {
     calculateTotal();
 }
 
-// ĐÃ SỬA: Hàm này trước đó bị thiếu HTML và thiếu dấu ngoặc đóng
 function addProductRow(name = "", price = "", qty = 1) {
     const container = document.getElementById('product-list');
     if (!container) return; 
@@ -340,7 +454,6 @@ function calculateTotal() {
     const qtyInputs = document.querySelectorAll('.p-qty');
 
     nameInputs.forEach((el, idx) => {
-        // Dùng parseCurrency cho đơn giá sản phẩm
         const price = parseCurrency(priceInputs[idx].value) || 0;
         const qty = parseFloat(qtyInputs[idx].value) || 0;
         
@@ -349,7 +462,6 @@ function calculateTotal() {
         }
     });
 
-    // QUAN TRỌNG: Dùng parseCurrency để đọc giá trị có dấu phẩy từ ô Ship và Giảm giá
     const ship = parseCurrency(document.getElementById('shipFee').value) || 0;
     const dVal = parseCurrency(document.getElementById('discountVal').value) || 0;
     const dType = document.getElementById('discountType').value;
@@ -357,11 +469,11 @@ function calculateTotal() {
     let disc = dType === 'percent' ? subtotal * (dVal/100) : dVal;
     let total = Math.max(0, subtotal - disc + ship);
     
-    // Hiển thị kết quả (giả sử bạn dùng hàm formatMoney có sẵn của bạn)
     document.getElementById('finalTotal').innerText = formatMoney(total);
     
     return { subtotal, total };
 }
+
 function saveOrder() {
     const phone = document.getElementById('custPhone').value.trim();
     const name = document.getElementById('custName').value.trim();
@@ -369,13 +481,11 @@ function saveOrder() {
     const type = document.getElementById('custType').value;
     const isEdit = document.getElementById('editOrderId').value !== "";
     
-    if(!phone || !name) return alert("Thiếu Tên hoặc SĐT!");
+    if(!phone || !name) return showCustomAlert("Vui lòng nhập Tên hoặc SĐT!", "warning");
     
     let products = [];
     let valid = true;
 
-    // QUAN TRỌNG: Sửa cách lấy dữ liệu sản phẩm an toàn hơn (Tránh lỗi dùng [idx])
-    // Thay vì quét riêng lẻ, ta quét từng "dòng sản phẩm" (product-row)
     document.querySelectorAll('.product-row').forEach((row) => {
         const nameInput = row.querySelector('.p-name').value;
         const priceInput = row.querySelector('.p-price').value;
@@ -392,9 +502,8 @@ function saveOrder() {
         }
     });
 
-    if(!valid || products.length === 0) return alert("Kiểm tra lại sản phẩm!");
+    if(!valid || products.length === 0) return showCustomAlert("Kiểm tra lại thông tin sản phẩm!", "warning");
     
-    // Cập nhật tồn kho (Local)
     if (!isEdit) {
         products.forEach(p => {
             const invItem = inventory.find(i => i.name.toLowerCase() === p.name.toLowerCase());
@@ -403,7 +512,6 @@ function saveOrder() {
         });
     }
     
-    // Cập nhật thông tin khách hàng (Local)
     if(!customers[phone]) {
         customers[phone] = { name, address: addr, birthday: '', job: '', note: '', anniversary: document.getElementById('orderDate').value, status: 'Vãn lai', timestamp: Date.now() };
     } else { 
@@ -439,15 +547,13 @@ function saveOrder() {
         isPaid: existingOrder ? (existingOrder.isPaid || false) : false 
     };
 
-    // QUAN TRỌNG: Cập nhật ngay mảng orders ở Client để UI không bị delay
     if (isEdit) {
         const index = orders.findIndex(x => x.id === id);
         if (index !== -1) orders[index] = order;
     } else {
-        orders.unshift(order); // Đẩy đơn mới lên đầu danh sách
+        orders.unshift(order); 
     }
 
-    // Đẩy dữ liệu lên Firebase
     let updates = {};
     updates[`v11_orders/${id}`] = order;
     updates[`v11_customers/${phone}`] = customers[phone];
@@ -456,11 +562,11 @@ function saveOrder() {
     userRef.update(updates)
         .then(() => {
             resetForm(); 
-            renderTable(); // Cập nhật lại bảng đơn hàng ngay lập tức
+            renderTable(); 
             showToast("Đã lưu đồng bộ thành công!");
         })
         .catch((error) => {
-            alert("Có lỗi khi lưu đơn hàng: " + error.message);
+            showCustomAlert("Có lỗi khi lưu đơn hàng: " + error.message, "error");
         });
 }
 
@@ -496,7 +602,7 @@ function renderTable() {
         else if (o.payMethod === "Tiền mặt") shortPayMethod = "TM";
 
         let paidStyle = o.isPaid 
-    ? "background-color: #10b981; border-color: #059669; color: #ffffff;" // Màu xanh (Đã thu)
+    ? "background-color: #10b981; border-color: #059669; color: #ffffff;"
     : "background-color: #f1f5f9; border-color: #e2e8f0; color: #94a3b8;";
 
         let shipDateStyle = o.status === 'Đợi gửi' 
@@ -566,105 +672,69 @@ function renderTable() {
         </tr>`;
     }).join('');
 }
-// ==========================================
-// CÁC HÀM XỬ LÝ ĐƠN HÀNG TRONG BẢNG
-// ==========================================
 
 function changeOrderStatus(id, newStatus) {
-    // 1. Tìm đơn hàng trong mảng dữ liệu local
     const index = orders.findIndex(o => o.id == id);
     
     if (index !== -1) {
-        // 2. Cập nhật dữ liệu vào mảng orders (Quan trọng để bảng không bị nhảy về giá trị cũ)
         orders[index].status = newStatus;
-
-        // 3. Gửi lệnh cập nhật lên Firebase
-        userRef.child(`v11_orders/${id}`).update({ status: newStatus })
+        userRef.child(`v11_orders/${id}`).update({ status: newStatus });
           
-
-        // 4. CẬP NHẬT GIAO DIỆN TỨC THÌ (Đổi cả CHỮ và MÀU)
-        // Tìm đúng thẻ select của đơn hàng này dựa trên ID
         const selectEl = document.querySelector(`select[onchange*="${id}"]`);
         
         if (selectEl) {
-            // Đổi chữ hiển thị bằng cách gán lại giá trị được chọn
             selectEl.value = newStatus; 
-
-            // Đổi màu sắc theo trạng thái mới
-            const styles = getStatusStyles(newStatus);
-            selectEl.style.setProperty('background-color', styles.bg, 'important');
-            selectEl.style.setProperty('color', styles.text, 'important');
-        }
-                if (selectEl) {
-            // Đổi chữ hiển thị bằng cách gán lại giá trị được chọn
-            selectEl.value = newStatus; 
-
-            // Đổi màu sắc theo trạng thái mới
             const styles = getStatusStyles(newStatus);
             selectEl.style.setProperty('background-color', styles.bg, 'important');
             selectEl.style.setProperty('color', styles.text, 'important');
         }
 
-        // --- THÊM ĐOẠN NÀY ĐỂ ĐỔI MÀU CỘT NGÀY GỬI TỨC THÌ ---
         const shipBadge = document.getElementById(`ship-badge-${id}`);
         if (shipBadge) {
             if (newStatus === 'Đợi gửi') {
-                // Đổi thành màu cam đỏ nổi bật
                 shipBadge.className = "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
             } else {
-                // Đổi thành xám mờ
                 shipBadge.className = "bg-slate-100 text-slate-400 border border-slate-200 opacity-60 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
             }
         }
      
-        // 5. Cập nhật lại biểu đồ/thống kê nếu cần (không ảnh hưởng đến bảng)
         if (typeof renderAnalytics === "function") {
             renderAnalytics();
         }
     }
 }
 
-
 function togglePaidStatus(id) {
     const orderIndex = orders.findIndex(x => x.id == id);
     if (orderIndex !== -1) {
         const newStatus = !orders[orderIndex].isPaid;
         
-        // 1. Cập nhật Local State trước để UI phản hồi tức thì
         orders[orderIndex].isPaid = newStatus;
-        renderTable(); // Đổi màu nút ngay lập tức
+        renderTable(); 
         
-        // Cập nhật lại số liệu nếu đang mở tab báo cáo
         if(!document.getElementById('view-analytics').classList.contains('hidden')) {
             renderAnalytics(); 
         }
 
-        // 2. Đẩy dữ liệu lên Firebase
         userRef.child(`v11_orders/${id}`).update({ isPaid: newStatus })
-            .then(() => {
-                if(newStatus);
-                else;
-            })
             .catch(err => {
-                // Trả lại trạng thái cũ nếu lỗi mạng
                 orders[orderIndex].isPaid = !newStatus;
                 renderTable();
-                alert("Lỗi: " + err.message);
+                showCustomAlert("Lỗi hệ thống: " + err.message, "error");
             });
     }
 }
 
 function deleteOrder(id) { 
-    if(confirm("Xoá đơn này?")) { 
+    showCustomConfirm("Bạn có chắc chắn muốn xóa đơn hàng này?", () => {
         userRef.child(`v11_orders/${id}`).remove()
             .then(() => {
-                // Xóa ở Local và render lại UI cho mượt
                 orders = orders.filter(x => x.id != id);
                 renderTable();
                 showToast("Đã xóa đơn hàng!");
             })
-            .catch(error => alert("Lỗi khi xóa: " + error.message));
-    } 
+            .catch(error => showCustomAlert("Lỗi khi xóa: " + error.message, "error"));
+    });
 }
 
 function getStatusStyles(status) {
@@ -770,9 +840,6 @@ function saveCRM() { userRef.child('v11_customers').set(customers); }
 function autoFillByPhone() { const p = document.getElementById('custPhone').value; if(customers[p]) { document.getElementById('custName').value = customers[p].name; document.getElementById('custAddr').value = customers[p].address; } }
 function autoFillByName() { const n = document.getElementById('custName').value; const p = Object.keys(customers).find(k => customers[k].name === n); if(p) { document.getElementById('custPhone').value = p; document.getElementById('custAddr').value = customers[p].address; } }
 
-
-
-
 function autoSetDeliveryDate() { const d = document.getElementById('shipDate').value; if(d) { const date = new Date(d); date.setDate(date.getDate()+3); document.getElementById('deliveryDate').value = date.toISOString().split('T')[0]; } }
 
 function switchTab(t) {
@@ -790,7 +857,6 @@ function renderCustomerCRM() {
     const tbody = document.getElementById('customerTableBody');
     if(!tbody) return;
     
-    // Tính toán chi tiêu an toàn, tránh trường hợp o.customer bị undefined
     const spendings = {}; 
     orders.forEach(o => {
         if(o && o.customer && o.customer.phone) {
@@ -812,7 +878,6 @@ function renderCustomerCRM() {
         });
     }
 
-    // So sánh an toàn (Safe Sort) để tránh lỗi Undefined
     keys.sort((a, b) => {
         const cA = customers[a] || {};
         const cB = customers[b] || {};
@@ -844,7 +909,6 @@ function renderCustomerCRM() {
         let isAnniToday = (anniMMDD === todayMMDD);
         let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
         
-        // Escape nháy đơn an toàn khi gắn vào HTML
         const safePhone = phone.replace(/'/g, "\\'");
         
         return `<tr>
@@ -878,9 +942,16 @@ function renderCustomerCRM() {
     }
 }
 
-
 function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
-function deleteCustomer(p) { if(confirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?")) { delete customers[p]; saveCRM(); } }
+
+function deleteCustomer(p) { 
+    showCustomConfirm("Bạn có chắc chắn muốn xóa khách hàng này khỏi danh sách?", () => {
+        delete customers[p]; 
+        saveCRM(); 
+        showToast("Đã xóa khách hàng!");
+    }); 
+}
+
 function resetForm() { document.getElementById('orderForm').reset(); document.getElementById('editOrderId').value = ""; document.getElementById('product-list').innerHTML = ""; addProductRow(); document.getElementById('orderDate').valueAsDate = new Date(); document.getElementById('shipDate').valueAsDate = new Date(); autoSetDeliveryDate(); calculateTotal(); document.getElementById('btnSave').innerHTML = '<i class="fa-solid fa-check-double mr-2"></i>Lưu đơn'; }
 function closeModal() { document.getElementById('invoiceModal').classList.add('hidden'); }
 
@@ -888,33 +959,29 @@ function downloadImage() {
     const invoice = document.getElementById('invoiceContent');
     const modal = document.getElementById('invoiceModal');
     
-    // Lấy nút đang bấm để đổi hiệu ứng Loading
     const btn = document.querySelector('button[onclick="downloadImage()"]');
     const originalText = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>ĐANG XỬ LÝ...';
     btn.disabled = true;
 
-    // Lưu lại trạng thái CSS cũ
     const originalOverflow = invoice.style.overflow;
     const originalPadding = invoice.style.paddingBottom;
     const originalShadow = invoice.style.boxShadow;
 
-    // Tối ưu phần tử trước khi chụp ảnh
     invoice.style.overflow = 'visible';
     invoice.style.paddingBottom = "30px";
-    invoice.style.boxShadow = 'none'; // Tắt bóng đổ để tránh lỗi viền đen của html2canvas
+    invoice.style.boxShadow = 'none'; 
 
-    // Reset scroll để tránh lỗi offset
     modal.scrollTop = 0;
     window.scrollTo(0, 0);
 
     setTimeout(() => {
         html2canvas(invoice, {
-            scale: 2, // Scale = 2 là tối ưu nhất cho thiết bị di động (đảm bảo nét, không bị crash RAM)
+            scale: 2, 
             useCORS: true,
             logging: false,
             backgroundColor: "#ffffff",
-            scrollY: -window.scrollY, // Fix lỗi lệch khung hình khi đang cuộn
+            scrollY: -window.scrollY, 
             windowWidth: invoice.scrollWidth,
             windowHeight: invoice.scrollHeight
         }).then(canvas => {
@@ -929,17 +996,14 @@ function downloadImage() {
             console.error("Lỗi xuất ảnh:", err);
             showToast("❌ Có lỗi xảy ra khi lưu ảnh, vui lòng thử lại!");
         }).finally(() => {
-            // Trả lại toàn bộ trạng thái UI như cũ
             invoice.style.overflow = originalOverflow || '';
             invoice.style.paddingBottom = originalPadding || '';
             invoice.style.boxShadow = originalShadow || '';
             btn.innerHTML = originalText;
             btn.disabled = false;
         });
-    }, 300); // Tăng delay lên 300ms để DOM kịp render các thay đổi CSS trước khi chụp
+    }, 300); 
 }
-
-
 
 function editOrder(id) { 
     const o = orders.find(x => x.id == id); 
@@ -964,20 +1028,13 @@ function editOrder(id) {
     window.scrollTo({ top: 0, behavior: 'smooth' }); 
 }
 
-
-
-
-
 function openInvoice(id) { 
-    const o = orders.find(x => x.id == id); // Đổi === thành ==
+    const o = orders.find(x => x.id == id); 
     
-    // Thêm dòng kiểm tra an toàn này để tránh sập web nếu không tìm thấy đơn
     if (!o) {
         showToast("Không tìm thấy dữ liệu đơn hàng!");
         return;
     }
-    // ... giữ nguyên phần còn lại
-
     
     const noteHtml = o.note ? `
         <div style="padding:15px; background:#FDF5F4; border-radius:12px; font-size:12px; color:#034C5F; margin:15px 0; border:1px solid #F9C4BA; line-height: 1.5; text-align: left;">
@@ -1071,7 +1128,7 @@ function addCVAccumulation() {
             cvAccumulations[idx].note = note;
         }
         document.getElementById('editCvAccId').value = "";
-        document.getElementById('btnSaveCVAcc').innerText = "THÊM MỚI"; // Đã sửa tên nút cho chuẩn
+        document.getElementById('btnSaveCVAcc').innerText = "THÊM MỚI"; 
     } else {
         cvAccumulations.push({
             id: Date.now(),
@@ -1116,11 +1173,12 @@ function toggleCVCheck(id) {
 }
 
 function deleteCVAccumulation(id) {
-    if(confirm("Xóa dòng tích lũy này?")) {
+    showCustomConfirm("Bạn có chắc chắn muốn xóa dòng tích lũy này?", () => {
         cvAccumulations = cvAccumulations.filter(a => a.id !== id);
         saveCVSync();
         renderAllCV();
-    }
+        showToast("Đã xóa tích lũy!");
+    });
 }
 
 function renderCVAccumulations() {
@@ -1203,7 +1261,7 @@ function saveCVMonthlyStat() {
     document.getElementById('cvMonthNote').value = '';
     document.getElementById('cvMonthEntry').value = 'Lần 1'; 
     
-    document.getElementById('btnSaveCVMonth').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> LƯU'; // Đã sửa để giống UI html
+    document.getElementById('btnSaveCVMonth').innerHTML = '<i class="fa-solid fa-floppy-disk mr-1"></i> LƯU'; 
     document.getElementById('btnSaveCVMonth').classList.replace('bg-amber-500', 'bg-[#EE6457]');
 
     saveCVSync();
@@ -1228,11 +1286,12 @@ function editCVMonthlyStat(monthKey) {
 }
 
 function deleteCVMonthlyStat(monthKey) {
-    if(confirm(`Xóa thống kê của tháng ${monthKey}?`)) {
+    showCustomConfirm(`Bạn có chắc chắn muốn xóa thống kê của tháng ${monthKey}?`, () => {
         delete cvMonthlyStats[monthKey];
         saveCVSync();
         renderAllCV();
-    }
+        showToast("Đã xóa thống kê tháng!");
+    });
 }
 
 function initCVSummaryFilters() {
@@ -1373,7 +1432,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMonthStr = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
     if (cvMonthPickEl) cvMonthPickEl.value = currentMonthStr;
 
-    // --- CODE MỚI THÊM: SET MẶC ĐỊNH BỘ LỌC ĐƠN HÀNG ---
     const listFilterStart = document.getElementById('listFilterStart');
     const listFilterEnd = document.getElementById('listFilterEnd');
 
@@ -1381,14 +1439,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayLocal = new Date();
         const firstDayLocal = new Date(todayLocal.getFullYear(), todayLocal.getMonth(), 1);
         
-        // Bù trừ múi giờ để toISOString() không bị lùi ngày
         firstDayLocal.setMinutes(firstDayLocal.getMinutes() - firstDayLocal.getTimezoneOffset());
         todayLocal.setMinutes(todayLocal.getMinutes() - todayLocal.getTimezoneOffset());
         
         listFilterStart.value = firstDayLocal.toISOString().split('T')[0];
         listFilterEnd.value = todayLocal.toISOString().split('T')[0];
     }
-    // ----------------------------------------------------
 
     if (typeof autoSetDeliveryDate === 'function') autoSetDeliveryDate(); 
     
@@ -1436,21 +1492,21 @@ function saveNewPassword() {
     const currentEmpId = localStorage.getItem('v11_employee_id'); 
 
     if (!newPass) {
-        alert("Vui lòng nhập mật khẩu mới!");
+        showCustomAlert("Vui lòng nhập mật khẩu mới!", "warning");
         return;
     }
 
     if (currentEmpId) {
         db.ref('SunsetShopData/Employees/' + currentEmpId + '/password').set(newPass)
             .then(() => {
-                alert("Đã đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.");
+                showCustomAlert("Đã đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.", "success");
                 closeChangePassModal();
             })
             .catch((error) => {
-                alert("Lỗi khi lưu mật khẩu: " + error.message);
+                showCustomAlert("Lỗi khi lưu mật khẩu: " + error.message, "error");
             });
     } else {
-        alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại!");
+        showCustomAlert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại!", "error");
     }
 }
 
@@ -1617,6 +1673,7 @@ function setupCustomAutocomplete() {
     });
 }
 
+// BỘ LỌC VÀ CHỈNH SỬA SỰ KIỆN ĐƯỢC GIỮ NGUYÊN (KHÔNG ĐỤNG CHẠM)
 function checkAndShowEvents() {
     const today = new Date();
     const currentMonth = today.getMonth() + 1; 
@@ -1761,7 +1818,7 @@ async function saveProfileInfo() {
     const newPhone = document.getElementById('profilePhone').value.trim();
 
     if (!newName) {
-        alert("Vui lòng nhập tên hiển thị!");
+        showCustomAlert("Vui lòng nhập tên hiển thị!", "warning");
         return;
     }
 
@@ -1771,11 +1828,11 @@ async function saveProfileInfo() {
             phone: newPhone
         });
 
-        alert("Cập nhật hồ sơ thành công!");
+        showCustomAlert("Cập nhật hồ sơ thành công!", "success");
         closeProfileModal();
     } catch (error) {
         console.error(error);
-        alert("Lỗi khi lưu dữ liệu!");
+        showCustomAlert("Lỗi khi lưu dữ liệu!", "error");
     }
 }
 
@@ -1799,24 +1856,19 @@ function listenToUserProfile() {
     }
 }
 
-// Trình quản lý giãn dòng thông minh cho toàn bộ hệ thống
 document.addEventListener('input', function (e) {
-    // Chỉ xử lý nếu phần tử đó có class crm-textarea
     if (e.target && e.target.classList.contains('crm-textarea')) {
         const target = e.target;
-        // Sử dụng requestAnimationFrame để tối ưu hóa việc vẽ lại giao diện (60fps)
         requestAnimationFrame(() => {
             target.style.height = 'auto';
             target.style.height = target.scrollHeight + 'px';
         });
     }
 });
-// --- FIX LỖI TÌM KIẾM: Thêm các hàm Debounce ---
 
 let searchOrderTimeout;
 function debouncedRenderOrder() {
     clearTimeout(searchOrderTimeout);
-    // Đợi 300ms sau khi người dùng ngừng gõ mới render lại bảng đơn hàng
     searchOrderTimeout = setTimeout(() => {
         renderTable();
     }, 300);
@@ -1825,7 +1877,6 @@ function debouncedRenderOrder() {
 let searchCustomerTimeout;
 function debouncedRenderCustomerCRM() {
     clearTimeout(searchCustomerTimeout);
-    // Đợi 300ms sau khi người dùng ngừng gõ mới render lại bảng khách hàng
     searchCustomerTimeout = setTimeout(() => {
         renderCustomerCRM();
     }, 300);
