@@ -270,16 +270,27 @@ function initDataSync() {
         cvAccumulations = data.v11_cv_accumulations || [];
         cvMonthlyStats = data.v11_cv_monthly || {};
 
-        renderTable();
+        // --- ĐIỂM THAY ĐỔI CHÍNH ---
+        // Nếu ĐANG LÀ thao tác cục bộ (đổi trạng thái/đã thu tiền) thì BỎ QUA lệnh vẽ lại bảng
+        if (!isLocalAction) {
+            renderTable();
+        }
+        // ---------------------------
+
         renderCustomerCRM();
         renderInventory();
         
-        if(!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
+        // Cũng có thể chặn luôn việc vẽ lại chart nếu đang thao tác cục bộ để mượt hơn
+        if(!document.getElementById('view-analytics').classList.contains('hidden') && !isLocalAction) {
+            renderAnalytics();
+        }
+        
         if(!document.getElementById('view-cv').classList.contains('hidden')) renderAllCV();
 
         checkAndShowEvents();
     });
 }
+
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!employeeId) {
@@ -297,6 +308,7 @@ let inventory = [];
 let revenueChartInstance = null;
 let cvAccumulations = [];
 let cvMonthlyStats = {};
+let isLocalAction = false; // Biến cờ chặn render lại bảng khi thao tác cục bộ
 
 const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 function formatCurrencyInput(input) { let value = input.value.replace(/\D/g, ""); if (value !== "") { input.value = new Intl.NumberFormat('en-US').format(value); } else { input.value = ""; } }
@@ -528,7 +540,7 @@ function saveOrder() {
 
     const order = { 
         id, 
-        timestamp: existingOrder ? existingOrder.timestamp : Date.now(), 
+        timestamp: Date.now(), // Cập nhật thời gian hiện tại để đưa lên đầu danh sách
         customer: { name, phone, addr, type }, 
         products, 
         payMethod: document.getElementById('payMethod').value, 
@@ -553,6 +565,9 @@ function saveOrder() {
     } else {
         orders.unshift(order); 
     }
+
+    // Tự động sort mảng hiển thị lên đầu ngay lập tức
+    orders.sort((a, b) => b.timestamp - a.timestamp);
 
     let updates = {};
     updates[`v11_orders/${id}`] = order;
@@ -587,6 +602,7 @@ function renderTable() {
     const fEnd = document.getElementById('listFilterEnd').value;
     const fType = document.getElementById('listFilterType').value;
     const search = document.getElementById('searchOrderInput').value.toLowerCase();
+    
     let filtered = orders.filter(o => {
         const targetDate = o.orderDate || o.date;
         const dateMatch = (!fStart || targetDate >= fStart) && (!fEnd || targetDate <= fEnd);
@@ -595,6 +611,10 @@ function renderTable() {
         return dateMatch && typeMatch && searchMatch;
     });
     
+    // ÉP BUỘC SẮP XẾP TẠI ĐÂY LÚC HIỂN THỊ
+    // Lấy thời gian lưu (timestamp), nếu dữ liệu cũ không có thì lấy mã đơn (id)
+    filtered.sort((a, b) => (b.timestamp || b.id || 0) - (a.timestamp || a.id || 0));
+
     document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
         const formattedShipDate = o.date ? o.date.split('-').reverse().join('/') : '';
         let shortPayMethod = "COD";
@@ -678,10 +698,9 @@ function changeOrderStatus(id, newStatus) {
     
     if (index !== -1) {
         orders[index].status = newStatus;
-        userRef.child(`v11_orders/${id}`).update({ status: newStatus });
           
+        // 1. CẬP NHẬT DOM CỤC BỘ (Đã có sẵn trong code của bạn)
         const selectEl = document.querySelector(`select[onchange*="${id}"]`);
-        
         if (selectEl) {
             selectEl.value = newStatus; 
             const styles = getStatusStyles(newStatus);
@@ -698,9 +717,18 @@ function changeOrderStatus(id, newStatus) {
             }
         }
      
-        if (typeof renderAnalytics === "function") {
-            renderAnalytics();
-        }
+        if (typeof renderAnalytics === "function") renderAnalytics();
+
+        // 2. BẬT CỜ VÀ LƯU FIREBASE
+        isLocalAction = true;
+        userRef.child(`v11_orders/${id}`).update({ status: newStatus })
+            .catch(err => {
+                showCustomAlert("Lỗi khi lưu trạng thái: " + err.message, "error");
+            })
+            .finally(() => {
+                // Đợi Firebase xử lý xong thì tắt cờ
+                setTimeout(() => { isLocalAction = false; }, 500);
+            });
     }
 }
 
@@ -940,7 +968,27 @@ function renderCustomerCRM() {
             });
         });
     }
+
+
+    if (typeof flatpickr !== "undefined") {
+        requestAnimationFrame(() => {
+            if (window.datePickerInstances) {
+                window.datePickerInstances.forEach(instance => {
+                    if(instance && typeof instance.destroy === 'function') instance.destroy();
+                });
+            }
+            window.datePickerInstances = flatpickr(".flatpickr-date", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y", // Thêm dòng này để hiển thị dd/mm/yyyy
+                locale: "vn",       // Thêm dòng này để áp dụng tiếng Việt
+                disableMobile: true 
+            });
+        });
+    }
 }
+
+
 
 function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
 
