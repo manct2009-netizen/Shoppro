@@ -1836,3 +1836,23 @@ function debouncedRenderCustomerCRM() {
         renderCustomerCRM();
     }, 300);
 }
+// 1. Tự động tải lại dữ liệu khi người dùng quay lại Tab trình duyệt
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'visible') {
+        console.log("Tab active - Đang đồng bộ lại dữ liệu...");
+        // Gọi lại hàm khởi tạo dữ liệu của bạn
+        if (typeof initDataSync === "function") {
+            initDataSync(); 
+        }
+    }
+});
+
+// 2. Kiểm tra trạng thái kết nối Firebase
+var connectedRef = firebase.database().ref(".info/connected");
+connectedRef.on("value", function(snap) {
+    if (snap.val() === true) {
+        console.log("Đã kết nối Firebase");
+    } else {
+        console.log("Mất kết nối - Đang thử lại...");
+    }
+});
