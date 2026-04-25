@@ -256,11 +256,15 @@ function initDataSync() {
         const data = snapshot.val() || {};
         let rawOrders = data.v11_orders || {};
         
-        // THUẬT TOÁN CHỮA LÀNH DỮ LIỆU CŨ: Tự động cấp ID và Timestamp nếu đơn cũ bị thiếu
+                // THUẬT TOÁN CHỮA LÀNH DỮ LIỆU CŨ: Tự động cấp ID và Timestamp nếu đơn cũ bị thiếu
         orders = Object.keys(rawOrders).map(key => {
             let obj = rawOrders[key];
             if (!obj) return null;
-            if (!obj.id) obj.id = key; 
+            
+            // SỬA LỖI Ở ĐÂY: Bắt buộc ID nội bộ phải khớp 100% với Khóa (Key) gốc trên Firebase
+            // Không dùng "if (!obj.id)" nữa vì nếu id cũ bị sai, nó sẽ giữ cái sai đó.
+            obj.id = key; 
+            
             if (!obj.timestamp) obj.timestamp = parseInt(key) || Date.now();
             return obj;
         }).filter(obj => obj !== null).sort((a, b) => b.timestamp - a.timestamp);
@@ -1104,7 +1108,7 @@ function addCVAccumulation() {
 }
 
 function editCVAccumulation(id) {
-    let acc = cvAccumulations.find(a => a.id === id);
+    let acc = cvAccumulations.find(a => a.id == id);
     if(!acc) return;
     document.getElementById('editCvAccId').value = acc.id;
     document.getElementById('cvAccAmount').value = new Intl.NumberFormat('en-US').format(acc.amount);
@@ -1116,7 +1120,7 @@ function editCVAccumulation(id) {
 }
 
 function toggleCVCheck(id) {
-    let acc = cvAccumulations.find(a => a.id === id);
+    let acc = cvAccumulations = cvAccumulations.filter(a => a.id != id);
     if(acc) {
         acc.checked = !acc.checked;
         saveCVSync();
