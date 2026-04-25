@@ -89,7 +89,6 @@ function showCustomConfirm(message, onConfirmCallback) {
 
     messageEl.innerText = message;
 
-    // Reset sự kiện click cũ
     const newBtnCancel = btnCancel.cloneNode(true);
     const newBtnOk = btnOk.cloneNode(true);
     btnCancel.parentNode.replaceChild(newBtnCancel, btnCancel);
@@ -256,7 +255,15 @@ function initDataSync() {
     userRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
         let rawOrders = data.v11_orders || {};
-        orders = Object.values(rawOrders).sort((a, b) => b.timestamp - a.timestamp);
+        
+        // THUẬT TOÁN CHỮA LÀNH DỮ LIỆU CŨ: Tự động cấp ID và Timestamp nếu đơn cũ bị thiếu
+        orders = Object.keys(rawOrders).map(key => {
+            let obj = rawOrders[key];
+            if (!obj) return null;
+            if (!obj.id) obj.id = key; 
+            if (!obj.timestamp) obj.timestamp = parseInt(key) || Date.now();
+            return obj;
+        }).filter(obj => obj !== null).sort((a, b) => b.timestamp - a.timestamp);
 
         let rawCust = data.v11_customers || {};
         customers = {};
@@ -270,17 +277,13 @@ function initDataSync() {
         cvAccumulations = data.v11_cv_accumulations || [];
         cvMonthlyStats = data.v11_cv_monthly || {};
 
-        // --- ĐIỂM THAY ĐỔI CHÍNH ---
-        // Nếu ĐANG LÀ thao tác cục bộ (đổi trạng thái/đã thu tiền) thì BỎ QUA lệnh vẽ lại bảng
         if (!isLocalAction) {
             renderTable();
         }
-        // ---------------------------
 
         renderCustomerCRM();
         renderInventory();
         
-        // Cũng có thể chặn luôn việc vẽ lại chart nếu đang thao tác cục bộ để mượt hơn
         if(!document.getElementById('view-analytics').classList.contains('hidden') && !isLocalAction) {
             renderAnalytics();
         }
@@ -290,7 +293,6 @@ function initDataSync() {
         checkAndShowEvents();
     });
 }
-
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!employeeId) {
@@ -308,7 +310,7 @@ let inventory = [];
 let revenueChartInstance = null;
 let cvAccumulations = [];
 let cvMonthlyStats = {};
-let isLocalAction = false; // Biến cờ chặn render lại bảng khi thao tác cục bộ
+let isLocalAction = false; 
 
 const formatMoney = (n) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 function formatCurrencyInput(input) { let value = input.value.replace(/\D/g, ""); if (value !== "") { input.value = new Intl.NumberFormat('en-US').format(value); } else { input.value = ""; } }
@@ -445,20 +447,6 @@ function addProductRow(name = "", price = "", qty = 1) {
     container.appendChild(div);
 }
 
-function autoFillProductPrice(inputElement) {
-    const val = inputElement.value;
-    const pName = inventory.find(p => p.name === val) ? val : inventory.find(p => inputElement.value.includes(p.name))?.name;
-    if(pName) {
-        const product = inventory.find(p => p.name === pName);
-        if (product) {
-            inputElement.value = product.name;
-            const row = inputElement.closest('.product-row');
-            row.querySelector('.p-price').value = new Intl.NumberFormat('en-US').format(product.price);
-            calculateTotal();
-        }
-    }
-}
-
 function calculateTotal() {
     let subtotal = 0;
     const nameInputs = document.querySelectorAll('.p-name');
@@ -468,10 +456,7 @@ function calculateTotal() {
     nameInputs.forEach((el, idx) => {
         const price = parseCurrency(priceInputs[idx].value) || 0;
         const qty = parseFloat(qtyInputs[idx].value) || 0;
-        
-        if (el.value) { 
-            subtotal += price * qty;
-        }
+        if (el.value) subtotal += price * qty;
     });
 
     const ship = parseCurrency(document.getElementById('shipFee').value) || 0;
@@ -482,7 +467,6 @@ function calculateTotal() {
     let total = Math.max(0, subtotal - disc + ship);
     
     document.getElementById('finalTotal').innerText = formatMoney(total);
-    
     return { subtotal, total };
 }
 
@@ -506,11 +490,7 @@ function saveOrder() {
         if(!nameInput || !priceInput) {
             valid = false;
         } else {
-            products.push({ 
-                name: nameInput, 
-                price: parseCurrency(priceInput) || 0, 
-                qty: qtyInput 
-            });
+            products.push({ name: nameInput, price: parseCurrency(priceInput) || 0, qty: qtyInput });
         }
     });
 
@@ -529,26 +509,24 @@ function saveOrder() {
     } else { 
         customers[phone].name = name; 
         customers[phone].address = addr; 
-        if (!customers[phone].anniversary) {
-            customers[phone].anniversary = document.getElementById('orderDate').value;
-        }
+        if (!customers[phone].anniversary) customers[phone].anniversary = document.getElementById('orderDate').value;
     }
 
     const { subtotal, total } = calculateTotal();
-    const id = isEdit ? parseInt(document.getElementById('editOrderId').value) : Date.now();
+    
+    // Ép kiểu String để đảm bảo Firebase key đồng nhất cho đơn cũ lẫn mới
+    const id = isEdit ? document.getElementById('editOrderId').value : Date.now().toString();
     const existingOrder = isEdit ? orders.find(x => x.id == id) : null;
+    const orderTimestamp = (isEdit && existingOrder) ? existingOrder.timestamp : Date.now();
 
     const order = { 
         id, 
-        timestamp: Date.now(), // Cập nhật thời gian hiện tại để đưa lên đầu danh sách
+        timestamp: orderTimestamp, 
         customer: { name, phone, addr, type }, 
         products, 
         payMethod: document.getElementById('payMethod').value, 
         shipFee: parseFloat(document.getElementById('shipFee').value) || 0, 
-        discount: { 
-            val: parseFloat(document.getElementById('discountVal').value) || 0, 
-            type: document.getElementById('discountType').value 
-        }, 
+        discount: { val: parseFloat(document.getElementById('discountVal').value) || 0, type: document.getElementById('discountType').value }, 
         orderDate: document.getElementById('orderDate').value,
         date: document.getElementById('shipDate').value, 
         deliveryDate: document.getElementById('deliveryDate').value, 
@@ -560,13 +538,12 @@ function saveOrder() {
     };
 
     if (isEdit) {
-        const index = orders.findIndex(x => x.id === id);
+        const index = orders.findIndex(x => x.id == id);
         if (index !== -1) orders[index] = order;
     } else {
         orders.unshift(order); 
     }
 
-    // Tự động sort mảng hiển thị lên đầu ngay lập tức
     orders.sort((a, b) => b.timestamp - a.timestamp);
 
     let updates = {};
@@ -574,15 +551,13 @@ function saveOrder() {
     updates[`v11_customers/${phone}`] = customers[phone];
     updates[`v11_inventory`] = inventory;
 
-    userRef.update(updates)
-        .then(() => {
-            resetForm(); 
-            renderTable(); 
-            showToast("Đã lưu đồng bộ thành công!");
-        })
-        .catch((error) => {
-            showCustomAlert("Có lỗi khi lưu đơn hàng: " + error.message, "error");
-        });
+    userRef.update(updates).then(() => {
+        resetForm(); 
+        renderTable(); 
+        showToast("Đã lưu đồng bộ thành công!");
+    }).catch((error) => {
+        showCustomAlert("Có lỗi khi lưu đơn hàng: " + error.message, "error");
+    });
 }
 
 function addManualCustomer() {
@@ -611,9 +586,7 @@ function renderTable() {
         return dateMatch && typeMatch && searchMatch;
     });
     
-    // ÉP BUỘC SẮP XẾP TẠI ĐÂY LÚC HIỂN THỊ
-    // Lấy thời gian lưu (timestamp), nếu dữ liệu cũ không có thì lấy mã đơn (id)
-    filtered.sort((a, b) => (b.timestamp || b.id || 0) - (a.timestamp || a.id || 0));
+    filtered.sort((a, b) => b.timestamp - a.timestamp);
 
     document.getElementById('orderTableBody').innerHTML = filtered.map(o => {
         const formattedShipDate = o.date ? o.date.split('-').reverse().join('/') : '';
@@ -622,8 +595,8 @@ function renderTable() {
         else if (o.payMethod === "Tiền mặt") shortPayMethod = "TM";
 
         let paidStyle = o.isPaid 
-    ? "background-color: #10b981; border-color: #059669; color: #ffffff;"
-    : "background-color: #f1f5f9; border-color: #e2e8f0; color: #94a3b8;";
+            ? "background-color: #10b981; border-color: #059669; color: #ffffff;"
+            : "background-color: #f1f5f9; border-color: #e2e8f0; color: #94a3b8;";
 
         let shipDateStyle = o.status === 'Đợi gửi' 
             ? "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30" 
@@ -653,30 +626,30 @@ function renderTable() {
             <td class="p-4 text-center font-black text-[#034C5F] text-xs">
                 ${shortPayMethod}
             </td>
-        <td class="p-4 text-center">
-        <select onchange="changeOrderStatus('${o.id}', this.value)" 
-            class="text-[11px] font-bold rounded-full px-3 py-1 cursor-pointer transition-all appearance-none border-none outline-none focus:ring-0"
-            style="
-                background-color: ${getStatusStyles(o.status).bg} !important; 
-                color: ${getStatusStyles(o.status).text} !important;
-                text-align: center;
-                width: auto;
-                min-width: 100px;
-            ">
-            <option value="Đợi gửi" ${o.status === 'Đợi gửi' ? 'selected' : ''} style="background: white; color: #000000;">Đợi gửi</option>
-            <option value="Đang giao" ${o.status === 'Đang giao' ? 'selected' : ''} style="background: white; color: #1e40af;">Đang giao 🚚</option>
-            <option value="Thành công" ${o.status === 'Thành công' ? 'selected' : ''} style="background: white; color: #065f46;">Thành công ✅</option>
-            <option value="Chăm sóc" ${o.status === 'Chăm sóc' ? 'selected' : ''} style="background: white; color: #5b21b6;">Chăm sóc 💬</option>
-            <option value="HD sử dụng" ${o.status === 'HD sử dụng' ? 'selected' : ''} style="background: white; color: #92400e;">HD sử dụng 📖</option>
-            <option value="Xử lý" ${o.status === 'Xử lý' ? 'selected' : ''} style="background: white; color: #991b1b;">Xử lý ⚙️</option>
-            <option value="Đơn BOM 💣" ${o.status === 'Đơn BOM 💣' ? 'selected' : ''} style="background: white; color: #7f1d1d;">Đơn Bom 💣</option>
-            <option value="Đã Hủy" ${o.status === 'Đã Hủy' ? 'selected' : ''} style="background: white; color: #374151;">Đã Hủy ❌</option>
-        </select>
-    </td>
+            <td class="p-4 text-center">
+                <select id="status-select-${o.id}" onchange="changeOrderStatus('${o.id}', this.value)" 
+                    class="text-[11px] font-bold rounded-full px-3 py-1 cursor-pointer transition-all appearance-none border-none outline-none focus:ring-0"
+                    style="
+                        background-color: ${getStatusStyles(o.status).bg} !important; 
+                        color: ${getStatusStyles(o.status).text} !important;
+                        text-align: center;
+                        width: auto;
+                        min-width: 100px;
+                    ">
+                    <option value="Đợi gửi" ${o.status === 'Đợi gửi' ? 'selected' : ''} style="background: white; color: #000000;">Đợi gửi</option>
+                    <option value="Đang giao" ${o.status === 'Đang giao' ? 'selected' : ''} style="background: white; color: #1e40af;">Đang giao 🚚</option>
+                    <option value="Thành công" ${o.status === 'Thành công' ? 'selected' : ''} style="background: white; color: #065f46;">Thành công ✅</option>
+                    <option value="Chăm sóc" ${o.status === 'Chăm sóc' ? 'selected' : ''} style="background: white; color: #5b21b6;">Chăm sóc 💬</option>
+                    <option value="HD sử dụng" ${o.status === 'HD sử dụng' ? 'selected' : ''} style="background: white; color: #92400e;">HD sử dụng 📖</option>
+                    <option value="Xử lý" ${o.status === 'Xử lý' ? 'selected' : ''} style="background: white; color: #991b1b;">Xử lý ⚙️</option>
+                    <option value="Đơn BOM 💣" ${o.status === 'Đơn BOM 💣' ? 'selected' : ''} style="background: white; color: #7f1d1d;">Đơn Bom 💣</option>
+                    <option value="Đã Hủy" ${o.status === 'Đã Hủy' ? 'selected' : ''} style="background: white; color: #374151;">Đã Hủy ❌</option>
+                </select>
+            </td>
 
             <td class="p-4 text-right font-bold text-[#EE6457]">${formatMoney(o.total)}</td>
            <td class="p-4 text-center">
-                <button onclick="togglePaidStatus('${o.id}')" 
+                <button id="btn-paid-${o.id}" onclick="togglePaidStatus('${o.id}')" 
                     class="w-7 h-7 rounded-lg border flex items-center justify-center transition-all hover:scale-110 shadow-sm mx-auto" 
                     style="${paidStyle}" title="Đánh dấu đã thu tiền">
                     <i class="fa-solid fa-check text-sm"></i>
@@ -695,12 +668,10 @@ function renderTable() {
 
 function changeOrderStatus(id, newStatus) {
     const index = orders.findIndex(o => o.id == id);
-    
     if (index !== -1) {
         orders[index].status = newStatus;
           
-        // 1. CẬP NHẬT DOM CỤC BỘ (Đã có sẵn trong code của bạn)
-        const selectEl = document.querySelector(`select[onchange*="${id}"]`);
+        const selectEl = document.getElementById(`status-select-${id}`);
         if (selectEl) {
             selectEl.value = newStatus; 
             const styles = getStatusStyles(newStatus);
@@ -710,25 +681,16 @@ function changeOrderStatus(id, newStatus) {
 
         const shipBadge = document.getElementById(`ship-badge-${id}`);
         if (shipBadge) {
-            if (newStatus === 'Đợi gửi') {
-                shipBadge.className = "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
-            } else {
-                shipBadge.className = "bg-slate-100 text-slate-400 border border-slate-200 opacity-60 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
-            }
+            if (newStatus === 'Đợi gửi') shipBadge.className = "bg-[#EE6457]/10 text-[#EE6457] border border-[#EE6457]/30 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
+            else shipBadge.className = "bg-slate-100 text-slate-400 border border-slate-200 opacity-60 font-black px-3 py-1 rounded-lg text-[11px] shadow-sm whitespace-nowrap transition-all";
         }
      
-        if (typeof renderAnalytics === "function") renderAnalytics();
+        if (!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
 
-        // 2. BẬT CỜ VÀ LƯU FIREBASE
         isLocalAction = true;
         userRef.child(`v11_orders/${id}`).update({ status: newStatus })
-            .catch(err => {
-                showCustomAlert("Lỗi khi lưu trạng thái: " + err.message, "error");
-            })
-            .finally(() => {
-                // Đợi Firebase xử lý xong thì tắt cờ
-                setTimeout(() => { isLocalAction = false; }, 500);
-            });
+            .catch(err => showCustomAlert("Lỗi khi lưu trạng thái: " + err.message, "error"))
+            .finally(() => setTimeout(() => { isLocalAction = false; }, 500));
     }
 }
 
@@ -736,20 +698,24 @@ function togglePaidStatus(id) {
     const orderIndex = orders.findIndex(x => x.id == id);
     if (orderIndex !== -1) {
         const newStatus = !orders[orderIndex].isPaid;
-        
         orders[orderIndex].isPaid = newStatus;
-        renderTable(); 
         
-        if(!document.getElementById('view-analytics').classList.contains('hidden')) {
-            renderAnalytics(); 
+        const btn = document.getElementById(`btn-paid-${id}`);
+        if(btn) {
+            if(newStatus) btn.style.cssText = "background-color: #10b981; border-color: #059669; color: #ffffff;";
+            else btn.style.cssText = "background-color: #f1f5f9; border-color: #e2e8f0; color: #94a3b8;";
         }
+        
+        if(!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics(); 
 
+        isLocalAction = true;
         userRef.child(`v11_orders/${id}`).update({ isPaid: newStatus })
             .catch(err => {
-                orders[orderIndex].isPaid = !newStatus;
+                orders[orderIndex].isPaid = !newStatus; 
                 renderTable();
                 showCustomAlert("Lỗi hệ thống: " + err.message, "error");
-            });
+            })
+            .finally(() => setTimeout(() => { isLocalAction = false; }, 500));
     }
 }
 
@@ -806,17 +772,13 @@ function renderAnalytics() {
         return o.status === "Đơn BOM 💣" && (!start || targetDate >= start) && (!end || targetDate <= end)
     });
 
-    let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0;
-    let sCollected = 0; 
+    let sOut = 0, sVnl = 0, sNew = 0, sTtd = 0, grandTotal = 0, sCollected = 0; 
     let dailyRevenue = {}; 
 
     validOrders.forEach(o => {
         const net = o.total - o.shipFee; 
         grandTotal += net;               
-        
-        if(o.isPaid) {
-            sCollected += net;
-        }
+        if(o.isPaid) sCollected += net;
         const targetDate = o.orderDate || o.date;
         if(dailyRevenue[targetDate]) dailyRevenue[targetDate] += net; else dailyRevenue[targetDate] = net;
         o.products.forEach(p => {
@@ -846,7 +808,6 @@ function renderAnalytics() {
     document.getElementById('statAvgOrder').innerText = validOrders.length ? formatMoney(grandTotal/validOrders.length) : '0 ₫';
     document.getElementById('statBomCount').innerText = bomOrders.length; 
     document.getElementById('statBomTotal').innerText = formatMoney(bomTotalValue);
-    
     document.getElementById('statCollected').innerText = formatMoney(sCollected);
     document.getElementById('statIncome').innerText = formatMoney(sIncome);
 
@@ -886,11 +847,7 @@ function renderCustomerCRM() {
     if(!tbody) return;
     
     const spendings = {}; 
-    orders.forEach(o => {
-        if(o && o.customer && o.customer.phone) {
-            spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total;
-        }
-    });
+    orders.forEach(o => { if(o && o.customer && o.customer.phone) spendings[o.customer.phone] = (spendings[o.customer.phone] || 0) + o.total; });
 
     const CUSTOMER_STATUS_STYLES = { "Vip": "background-color: #fee2e2; color: #dc2626; font-weight: bold; border: 1px solid #f87171;", "Vãn lai": "background-color: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #facc15;", "Thân Thiết": "background-color: #dcfce7; color: #15803d; font-weight: bold; border: 1px solid #4ade80;", "Đơn 1": "background-color: #dbeafe; color: #1d4ed8; font-weight: bold; border: 1px solid #60a5fa;", "Đơn 2": "background-color: #f3e8ff; color: #7e22ce; font-weight: bold; border: 1px solid #c084fc;", "Đơn 3": "background-color: #fce7f3; color: #be185d; font-weight: bold; border: 1px solid #f472b6;", "Bom": "background-color: #f3f4f6; color: #4b5563; font-weight: bold; border: 1px solid #9ca3af;", "Ngừng kết nối": "background-color: #ffedd5; color: #c2410c; font-weight: bold; border: 1px solid #fb923c;", "Chăm sóc": "background-color: #ecfdf5; color: #047857; font-weight: normal;" };
     const sortMode = document.getElementById('customerSortOrder').value; 
@@ -909,19 +866,15 @@ function renderCustomerCRM() {
     keys.sort((a, b) => {
         const cA = customers[a] || {};
         const cB = customers[b] || {};
-        const nameA = cA.name || "";
-        const nameB = cB.name || "";
-
         if (sortMode === 'newest') return (cB.timestamp || 0) - (cA.timestamp || 0);
         else if (sortMode === 'oldest') return (cA.timestamp || 0) - (cB.timestamp || 0);
-        else if (sortMode === 'name') return nameA.localeCompare(nameB);
+        else if (sortMode === 'name') return (cA.name || "").localeCompare(cB.name || "");
         else if (sortMode === 'spending') return (spendings[b] || 0) - (spendings[a] || 0); 
         return 0;
     });
     
-    const today = new Date();
-    const todayMonth = String(today.getMonth() + 1).padStart(2, '0');
-    const todayDate = String(today.getDate()).padStart(2, '0');
+    const todayMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+    const todayDate = String(new Date().getDate()).padStart(2, '0');
     const todayMMDD = `${todayMonth}-${todayDate}`;
 
     tbody.innerHTML = keys.map((phone, index) => {
@@ -929,14 +882,8 @@ function renderCustomerCRM() {
         const currentStatus = c.status || 'Vãn lai'; 
         const statusStyle = CUSTOMER_STATUS_STYLES[currentStatus] || "";
         
-        let bdayMMDD = c.birthday ? c.birthday.substring(5) : "";
-        let isBdayToday = (bdayMMDD === todayMMDD);
-        let bdayClass = isBdayToday ? "birthday-today" : "bg-light-pink";
-
-        let anniMMDD = c.anniversary ? c.anniversary.substring(5) : "";
-        let isAnniToday = (anniMMDD === todayMMDD);
-        let anniClass = isAnniToday ? "anniversary-today" : "bg-light-blue";
-        
+        let bdayClass = (c.birthday && c.birthday.substring(5) === todayMMDD) ? "birthday-today" : "bg-light-pink";
+        let anniClass = (c.anniversary && c.anniversary.substring(5) === todayMMDD) ? "anniversary-today" : "bg-light-blue";
         const safePhone = phone.replace(/'/g, "\\'");
         
         return `<tr>
@@ -962,33 +909,11 @@ function renderCustomerCRM() {
                 });
             }
             window.datePickerInstances = flatpickr(".flatpickr-date", {
-                dateFormat: "Y-m-d",
-                altInput: true,
-                disableMobile: true 
-            });
-        });
-    }
-
-
-    if (typeof flatpickr !== "undefined") {
-        requestAnimationFrame(() => {
-            if (window.datePickerInstances) {
-                window.datePickerInstances.forEach(instance => {
-                    if(instance && typeof instance.destroy === 'function') instance.destroy();
-                });
-            }
-            window.datePickerInstances = flatpickr(".flatpickr-date", {
-                dateFormat: "Y-m-d",
-                altInput: true,
-                altFormat: "d/m/Y", // Thêm dòng này để hiển thị dd/mm/yyyy
-                locale: "vn",       // Thêm dòng này để áp dụng tiếng Việt
-                disableMobile: true 
+                dateFormat: "Y-m-d", altInput: true, altFormat: "d/m/Y", locale: "vn", disableMobile: true 
             });
         });
     }
 }
-
-
 
 function updateCustomerField(p, f, v) { if(customers[p]) { customers[p][f] = v; saveCRM(); } }
 
@@ -1025,30 +950,18 @@ function downloadImage() {
 
     setTimeout(() => {
         html2canvas(invoice, {
-            scale: 2, 
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff",
-            scrollY: -window.scrollY, 
-            windowWidth: invoice.scrollWidth,
-            windowHeight: invoice.scrollHeight
+            scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff", scrollY: -window.scrollY, windowWidth: invoice.scrollWidth, windowHeight: invoice.scrollHeight
         }).then(canvas => {
             const link = document.createElement('a');
-            const timeStr = new Date().getTime(); 
-            link.download = `HoaDon_BNDShop_${timeStr}.png`;
+            link.download = `HoaDon_BNDShop_${new Date().getTime()}.png`;
             link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
-
             showToast("✅ Đã lưu ảnh hóa đơn thành công!");
         }).catch(err => {
             console.error("Lỗi xuất ảnh:", err);
             showToast("❌ Có lỗi xảy ra khi lưu ảnh, vui lòng thử lại!");
         }).finally(() => {
-            invoice.style.overflow = originalOverflow || '';
-            invoice.style.paddingBottom = originalPadding || '';
-            invoice.style.boxShadow = originalShadow || '';
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            invoice.style.overflow = originalOverflow || ''; invoice.style.paddingBottom = originalPadding || ''; invoice.style.boxShadow = originalShadow || ''; btn.innerHTML = originalText; btn.disabled = false;
         });
     }, 300); 
 }
@@ -1078,11 +991,7 @@ function editOrder(id) {
 
 function openInvoice(id) { 
     const o = orders.find(x => x.id == id); 
-    
-    if (!o) {
-        showToast("Không tìm thấy dữ liệu đơn hàng!");
-        return;
-    }
+    if (!o) return showToast("Không tìm thấy dữ liệu đơn hàng!");
     
     const noteHtml = o.note ? `
         <div style="padding:15px; background:#FDF5F4; border-radius:12px; font-size:12px; color:#034C5F; margin:15px 0; border:1px solid #F9C4BA; line-height: 1.5; text-align: left;">
@@ -1108,13 +1017,10 @@ function openInvoice(id) {
                     <p style="color:#EE6457; font-weight:800; margin-top:5px; text-transform:uppercase; line-height: 1.8;">${o.payMethod}</p> 
                 </div> 
             </div> 
-            
             <table style="width:100%; border-collapse:collapse; font-size:13px; line-height: 2.0;"> 
                 ${o.products.map(p => `<tr><td style="padding:10px 0; border-bottom:1px solid #f8fafc; text-align: left;">${p.name} (x${p.qty})</td><td style="text-align:right; font-weight:700; color:#034C5F;">${formatMoney(p.price*p.qty)}</td></tr>`).join('')} 
             </table> 
-            
             ${noteHtml} 
-            
             <div style="border-top:2px solid #034C5F; padding-top:15px; margin-bottom:20px;"> 
                 <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:4px; line-height: 1.5;">
                     <span>Vận chuyển:</span><span>+ ${formatMoney(o.shipFee)}</span>
@@ -1126,13 +1032,11 @@ function openInvoice(id) {
                     <span style="font-size: 16px;">TỔNG THU:</span><span style="padding-bottom: 4px;">${formatMoney(o.total)}</span>
                 </div> 
             </div> 
-            
             <div style="text-align:center; padding-top:15px; border-top:1px dashed #F9C4BA;"> 
                 <p style="font-size:14px; font-weight:700; color:#034C5F; margin:0; line-height: 1.5;">Cảm ơn bạn đã ủng hộ Shop! ❤️</p> 
                 <p style="font-size:10px; color:#97BEC6; margin-top:4px; line-height: 1.5; padding-bottom: 10px;">🍀Chúc quý khách có những trải nghiệm tuyệt vời với sản phẩm🍀</p> 
             </div> 
         </div>`; 
-        
     document.getElementById('invoiceModal').classList.remove('hidden'); 
 }           
 
@@ -1721,7 +1625,6 @@ function setupCustomAutocomplete() {
     });
 }
 
-// BỘ LỌC VÀ CHỈNH SỬA SỰ KIỆN ĐƯỢC GIỮ NGUYÊN (KHÔNG ĐỤNG CHẠM)
 function checkAndShowEvents() {
     const today = new Date();
     const currentMonth = today.getMonth() + 1; 
