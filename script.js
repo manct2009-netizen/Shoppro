@@ -1082,9 +1082,165 @@ function openInvoice(id) {
 
 function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); const today = new Date(); document.getElementById('exportStartDate').value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0]; document.getElementById('exportEndDate').value = today.toISOString().split('T')[0]; document.getElementById('exportFileName').value = `Don_Hang_Thang_${today.getMonth()+1}`; }
 function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
-function confirmExport() { const fileName = document.getElementById('exportFileName').value.trim() || `Export_${Date.now()}`; const s = document.getElementById('exportStartDate').value; const e = document.getElementById('exportEndDate').value; const data = orders.filter(o => { const targetDate = o.orderDate || o.date; return (!s || targetDate >= s) && (!e || targetDate <= e) }); let csv = "\ufeffMã Đơn,Ngày Đặt,Ngày Gửi,Ngày Giao,Tên,SĐT,Sản Phẩm,Tổng Tiền\n"; data.forEach(o => csv += `${o.id},${o.orderDate || o.date},${o.date},"${o.customer.name}","${o.customer.phone}","${o.products.map(p=>p.name).join('|')}",${o.total}\n`); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `${fileName}.csv`; link.click(); closeExportModal(); }
+function confirmExport() { 
+    const fileName = document.getElementById('exportFileName').value.trim() || `DanhSachDonHang_${new Date().toISOString().split('T')[0]}`; 
+    const s = document.getElementById('exportStartDate').value; 
+    const e = document.getElementById('exportEndDate').value; 
+    
+    // Lọc dữ liệu theo ngày
+    const data = orders.filter(o => { 
+        const targetDate = o.orderDate || o.date; 
+        return (!s || targetDate >= s) && (!e || targetDate <= e);
+    }); 
+    
+    // Chuẩn bị dữ liệu mảng object cho SheetJS theo đúng mẫu yêu cầu
+    const excelData = data.map(o => ({
+        "Mã ĐH": o.id,
+        "Khách hàng": o.customer.name,
+        "Số điện thoại": o.customer.phone,
+        "Địa chỉ": o.customer.addr || "",
+        "Ngày tạo": o.orderDate || o.date,
+        "Ngày nhận": o.deliveryDate || "",
+        "Trạng thái": o.status || "Đợi gửi",
+        "Hình thức TT": o.payMethod || "COD (Shipper)",
+        "Sản phẩm": o.products.map(p => `${p.name} (x${p.qty})`).join(', '),
+        "Tổng tiền": o.total
+    }));
 
-function exportCustomersToExcel() { let csv = "\ufeffTên,SĐT,Địa Chỉ,Sinh Nhật,Ngày Kỉ Niệm,Công Việc,Tình Trạng,Ghi Chú,Tổng Chi\n"; Object.keys(customers).forEach(p => { const c = customers[p]; const totalSpend = orders.filter(o=>o.customer.phone==p).reduce((a,b)=>a+b.total,0); csv += `"${c.name}","${p}","${c.address || ''}","${c.birthday || ''}","${c.anniversary || ''}","${c.job || ''}","${c.status || ''}","${c.note || ''}","${totalSpend}"\n`; }); const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = "KhachHang.csv"; link.click(); }
+    // Tạo worksheet và workbook
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+    
+    // Xuất file
+    XLSX.writeFile(workbook, `${fileName}.xlsx`);
+    
+    closeExportModal(); 
+    showToast("Đã xuất file Excel thành công!");
+}
+
+// Thay thế hàm xuất Excel cũ bằng phiên bản mới xuất ra .xlsx với đầy đủ cột
+function exportCustomersToExcel() {
+    // Chuẩn bị dữ liệu mảng
+    const excelData = Object.keys(customers).map(phone => {
+        const c = customers[phone];
+        // Tính tổng chi tiêu
+        const totalSpend = orders.filter(o => o.customer && o.customer.phone === phone).reduce((sum, o) => sum + (o.total || 0), 0);
+        
+        return {
+            "Tên": c.name || "",
+            "Số điện thoại": phone || "",
+            "Địa chỉ": c.address || "",
+            "Nghề nghiệp": c.job || "",
+            "Sinh nhật": c.birthday || "",
+            "Ngày kỷ niệm": c.anniversary || "",
+            "Ghi chú": c.note || "",
+            "Trạng thái": c.status || "Vãn lai",
+            "Tổng chi tiêu": totalSpend
+        };
+    });
+
+    if(excelData.length === 0) return showToast("Không có dữ liệu khách hàng để xuất!");
+
+    // Tạo file Excel và xuất
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "KhachHang");
+    
+    XLSX.writeFile(workbook, `DanhSachKhachHang_${new Date().toISOString().split('T')[0]}.xlsx`);
+    showToast("Đã tải xuống file Excel khách hàng!");
+}
+
+// Thêm hàm Mới: Nhập dữ liệu khách hàng từ file Excel
+function importCustomersFromExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    showCustomConfirm("Hệ thống sẽ cập nhật hoặc thêm mới khách hàng dựa trên 'Số điện thoại'. Bạn có chắc chắn muốn tiếp tục?", () => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if(jsonData.length === 0) {
+                    showCustomAlert("File Excel trống hoặc không đúng định dạng!", "warning");
+                    return;
+                }
+
+                let updates = {};
+                let newCount = 0;
+                let updateCount = 0;
+
+                jsonData.forEach(row => {
+                    const rawPhone = row["Số điện thoại"];
+                    if (!rawPhone) return; 
+                    
+                    const phone = String(rawPhone).trim();
+                    if(phone === "") return;
+
+                    const name = String(row["Tên"] || "").trim();
+                    const addr = String(row["Địa chỉ"] || "").trim();
+                    const job = String(row["Nghề nghiệp"] || "").trim();
+                    const birthday = String(row["Sinh nhật"] || "").trim();
+                    const anniversary = String(row["Ngày kỷ niệm"] || "").trim();
+                    const note = String(row["Ghi chú"] || "").trim();
+                    const status = String(row["Trạng thái"] || "Vãn lai").trim();
+
+                    if (customers[phone]) {
+                        // Cập nhật thông tin khách cũ (Giữ nguyên ngày tạo)
+                        customers[phone] = {
+                            ...customers[phone],
+                            name: name || customers[phone].name,
+                            address: addr || customers[phone].address,
+                            job: job || customers[phone].job,
+                            birthday: birthday || customers[phone].birthday,
+                            anniversary: anniversary || customers[phone].anniversary,
+                            note: note || customers[phone].note,
+                            status: status || customers[phone].status
+                        };
+                        updateCount++;
+                    } else {
+                        // Thêm khách hàng mới
+                        customers[phone] = {
+                            name: name,
+                            address: addr,
+                            job: job,
+                            birthday: birthday,
+                            anniversary: anniversary,
+                            note: note,
+                            status: status,
+                            timestamp: Date.now()
+                        };
+                        newCount++;
+                    }
+                    
+                    // Gắn vào object để update Firebase đồng loạt
+                    updates[`v11_customers/${phone}`] = customers[phone];
+                });
+
+                // Cập nhật lên Firebase
+                userRef.update(updates).then(() => {
+                    renderCustomerCRM();
+                    showCustomAlert(`Đã nhập thành công! Thêm mới ${newCount}, cập nhật ${updateCount} khách hàng.`, "success");
+                }).catch(err => {
+                    showCustomAlert("Lỗi khi lưu lên hệ thống: " + err.message, "error");
+                });
+
+            } catch (error) {
+                console.error(error);
+                showCustomAlert("Lỗi đọc file Excel: Dữ liệu không hợp lệ.", "error");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+    
+    // Đặt lại giá trị input để có thể chọn lại chính file đó
+    input.value = ''; 
+}
 
 function resetOrderFilters() { document.getElementById('listFilterStart').value = ''; document.getElementById('listFilterEnd').value = ''; document.getElementById('listFilterType').value = 'all'; renderTable(); }
 
@@ -1156,11 +1312,12 @@ function editCVAccumulation(id) {
 }
 
 function toggleCVCheck(id) {
-    let acc = cvAccumulations = cvAccumulations.filter(a => a.id != id);
+    // Sửa lỗi: dùng .find() để tìm phần tử thay vì dùng .filter() để xóa
+    let acc = cvAccumulations.find(a => a.id == id);
     if(acc) {
-        acc.checked = !acc.checked;
-        saveCVSync();
-        renderCVAccumulations();
+        acc.checked = !acc.checked; // Đảo ngược trạng thái tích (true/false)
+        saveCVSync();               // Lưu lên Firebase
+        renderCVAccumulations();    // Cập nhật lại giao diện
     }
 }
 
@@ -1892,3 +2049,110 @@ connectedRef.on("value", function(snap) {
         console.log("Mất kết nối - Đang thử lại...");
     }
 });
+function importOrdersFromExcel(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    showCustomConfirm("Nhập dữ liệu từ file Excel có thể ghi đè hoặc thêm mới đơn hàng dựa trên 'Mã ĐH'. Bạn có chắc chắn muốn tiếp tục?", () => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if(jsonData.length === 0) {
+                    showCustomAlert("File Excel trống hoặc không đúng định dạng!", "warning");
+                    return;
+                }
+
+                let updates = {};
+                let newOrdersCount = 0;
+
+                jsonData.forEach(row => {
+                    // Lấy Mã ĐH theo đúng tên cột
+                    const id = row["Mã ĐH"] ? String(row["Mã ĐH"]) : Date.now().toString() + Math.floor(Math.random() * 1000);
+                    
+                    // Xử lý chuỗi Sản phẩm (vd: Nước hoa boss (x1))
+                    let products = [];
+                    if (row["Sản phẩm"]) {
+                        const prodStrings = String(row["Sản phẩm"]).split(',');
+                        prodStrings.forEach(pStr => {
+                            const match = pStr.trim().match(/(.+?)(?:\s*\(x(\d+)\))?$/);
+                            if (match) {
+                                products.push({
+                                    name: match[1].trim(),
+                                    qty: parseInt(match[2]) || 1,
+                                    price: 0 // Đặt giá mặc định là 0 vì gộp chung vào Tổng tiền
+                                });
+                            }
+                        });
+                    }
+
+                    const phone = String(row["Số điện thoại"] || "");
+                    const name = String(row["Khách hàng"] || "");
+                    const addr = String(row["Địa chỉ"] || "");
+
+                    const order = {
+                        id: id,
+                        timestamp: parseInt(id) || Date.now(),
+                        orderDate: row["Ngày tạo"] || "",
+                        date: row["Ngày tạo"] || "", // Dùng chung ngày tạo cho ngày gửi
+                        deliveryDate: row["Ngày nhận"] || "",
+                        total: parseFloat(row["Tổng tiền"]) || 0,
+                        subtotal: parseFloat(row["Tổng tiền"]) || 0, 
+                        payMethod: row["Hình thức TT"] || "COD (Shipper)",
+                        status: row["Trạng thái"] || "Đợi gửi",
+                        shipFee: 0,
+                        discount: { val: 0, type: 'amount' },
+                        note: "Nhập từ file Excel",
+                        customer: {
+                            name: name,
+                            phone: phone,
+                            addr: addr,
+                            type: "new"
+                        },
+                        products: products.length > 0 ? products : [{name: "Chưa xác định", qty: 1, price: 0}],
+                        isPaid: false
+                    };
+
+                    // Cập nhật mảng orders local
+                    const existingIndex = orders.findIndex(o => o.id == id);
+                    if (existingIndex !== -1) {
+                        orders[existingIndex] = order;
+                    } else {
+                        orders.unshift(order);
+                        newOrdersCount++;
+                    }
+
+                    // Đẩy dữ liệu vào object update cho Firebase
+                    updates[`v11_orders/${id}`] = order;
+
+                    // Nếu khách hàng mới, thêm vào danh sách khách hàng luôn (kèm địa chỉ)
+                    if (phone && name && !customers[phone]) {
+                        customers[phone] = { name: name, address: addr, birthday: '', job: '', note: '', anniversary: '', status: 'Vãn lai', timestamp: Date.now() };
+                        updates[`v11_customers/${phone}`] = customers[phone];
+                    }
+                });
+
+                // Cập nhật lên Firebase
+                orders.sort((a, b) => b.timestamp - a.timestamp);
+                userRef.update(updates).then(() => {
+                    renderTable();
+                    if(!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
+                    showCustomAlert(`Đã nhập thành công! Cập nhật hệ thống với ${newOrdersCount} đơn mới.`, "success");
+                }).catch(err => {
+                    showCustomAlert("Lỗi khi lưu lên hệ thống: " + err.message, "error");
+                });
+
+            } catch (error) {
+                console.error(error);
+                showCustomAlert("Lỗi đọc file Excel: Dữ liệu không hợp lệ.", "error");
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+    input.value = ''; // Reset input để cho phép chọn lại cùng 1 file
+}

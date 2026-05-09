@@ -29,6 +29,7 @@
         }
       }
     </script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body class="">
     <div id="loginModal" class="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 backdrop-blur-md hidden transition-opacity duration-300">
@@ -328,8 +329,17 @@
                                 class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:border-[#38bdf8] outline-none text-sm transition-all bg-slate-50">
                         </div>
 
-                        <button onclick="openExportModal()" class="bg-white text-[#EE6457] px-4 py-2 rounded-xl text-xs font-bold border border-[#F9C4BA] hover:bg-[#EE6457] hover:text-white transition-all whitespace-nowrap"><i class="fa-solid fa-file-csv mr-1"></i> Xuất CSV</button>
-                    </div>
+                       <div class="flex gap-2">
+    <button onclick="document.getElementById('importExcelInput').click()" class="bg-white text-emerald-600 px-4 py-2 rounded-xl text-xs font-bold border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all whitespace-nowrap">
+        <i class="fa-solid fa-file-import mr-1"></i> Nhập XLSX
+    </button>
+    <input type="file" id="importExcelInput" accept=".xlsx, .xls" class="hidden" onchange="importOrdersFromExcel(this)">
+    
+    <button onclick="openExportModal()" class="bg-white text-[#EE6457] px-4 py-2 rounded-xl text-xs font-bold border border-[#F9C4BA] hover:bg-[#EE6457] hover:text-white transition-all whitespace-nowrap">
+        <i class="fa-solid fa-file-excel mr-1"></i> Xuất XLSX
+    </button>
+</div>
+
 
                     <div class="flex flex-wrap gap-2 items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                         <input type="date" id="listFilterStart" onchange="renderTable()" class="text-xs p-2 rounded-lg border border-slate-200">
@@ -503,10 +513,20 @@
 
            <div class="card overflow-hidden">
                 <div class="p-4 bg-[#034C5F] text-white flex flex-col gap-4">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng</h3>
-                        <button type="button" onclick="exportCustomersToExcel()" class="text-[10px] bg-white/20 px-3 py-1.5 rounded-lg border border-white/30 hover:bg-white/40 transition-colors"><i class="fa-solid fa-download mr-1"></i> Tải CSV</button>
-                    </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+    <h3 class="font-bold text-sm uppercase"><i class="fa-solid fa-address-book mr-2"></i>Dữ liệu khách hàng</h3>
+    <div class="flex gap-2">
+        <button onclick="document.getElementById('importCustomerExcelInput').click()" class="bg-white/90 text-emerald-700 px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-white transition-colors shadow-sm">
+            <i class="fa-solid fa-file-import mr-1"></i> Nhập XLSX
+        </button>
+        <input type="file" id="importCustomerExcelInput" accept=".xlsx, .xls" class="hidden" onchange="importCustomersFromExcel(this)">
+        
+        <button type="button" onclick="exportCustomersToExcel()" class="bg-white/90 text-[#EE6457] px-3 py-1.5 rounded-lg text-[11px] font-bold hover:bg-white transition-colors shadow-sm">
+            <i class="fa-solid fa-file-excel mr-1"></i> Xuất XLSX
+        </button>
+    </div>
+</div>
+
                     <div class="flex flex-wrap items-center gap-3">
                         <div class="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-lg border border-white/20">
                             <span class="text-[10px] font-bold text-[#97BEC6] uppercase hidden sm:inline">Sắp xếp:</span>
